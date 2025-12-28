@@ -1388,7 +1388,9 @@ class IterationRecord(BaseModel):
     feedback: Optional[CriticFeedback] = None
     actor_duration_ms: float = Field(..., ge=0)
     critic_duration_ms: Optional[float] = Field(default=None, ge=0)
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
 
 
 class RefinementResult(BaseModel):
