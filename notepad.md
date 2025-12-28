@@ -104,3 +104,49 @@ Time taken: ~20 minutes (continuation session)
 - /Map command uses image type detection (text/reference_image/heightmap) - good pattern for other commands
 
 Time taken: ~15 minutes
+
+[2025-12-29 04:05] - Task 9: Install to Global OpenCode Config
+
+### DISCOVERED ISSUES
+- No issues found - global ~/.opencode/ directory already existed with proper structure
+- Both ~/.opencode/ and ~/.config/opencode/ exist; used ~/.opencode/ as primary (matches /Map installation)
+
+### IMPLEMENTATION DECISIONS
+- Target: ~/.opencode/ directory (C:\Users\hdy86\.opencode\)
+  - Matches existing /Map command and pcg-actor/pcg-critic agent locations
+- Created install.sh (Unix/Mac) and install.bat (Windows) scripts
+  - Both scripts backup existing files before overwriting
+  - Colored output for user-friendly installation experience
+  - Auto-detect OpenCode config location (priority: ~/.opencode > ~/.config/opencode)
+- Created comprehensive README.md with:
+  - Installation instructions (both automatic and manual)
+  - Python CLI usage examples
+  - OpenCode /GamePlan command examples
+  - GDD schema reference with all enum values
+  - Architecture diagram (ASCII)
+  - Critic review framework documentation
+  - Downstream integration guides
+
+### PROBLEMS FOR NEXT TASKS
+- Task 10 will need to implement actual --format game-generator output formatter
+- Task 11 will need to generate actual /Map command arguments from map_hints
+
+### VERIFICATION RESULTS
+- Files copied successfully:
+  - game-designer.yaml → ~/.opencode/agent/ (12454 bytes)
+  - game-reviewer.yaml → ~/.opencode/agent/ (11135 bytes)
+  - GamePlan.md → ~/.opencode/command/ (16341 bytes)
+- All 204 tests pass (no regressions)
+- install.sh made executable with chmod +x
+- README.md created (~550 lines with comprehensive documentation)
+
+### LEARNINGS
+- OpenCode global config locations:
+  - Windows: ~/.opencode/ or ~/.config/opencode/
+  - Unix: ~/.opencode/ or ~/.config/opencode/
+- Priority: ~/.opencode/ takes precedence (project-level in home dir acts as global)
+- Existing agents in ~/.opencode/agent/: pcg-actor.yaml, pcg-critic.yaml
+- Existing commands in ~/.opencode/command/: Map.md
+- Bash works on Windows via Git Bash/MSYS2 shell
+
+Time taken: ~10 minutes
