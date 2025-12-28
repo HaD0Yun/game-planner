@@ -1,0 +1,71 @@
+# Game Planner Configuration
+# AI-Powered Game Design Document Generator
+# Based on Dual-Agent Actor-Critic Architecture (arXiv:2512.10501)
+
+# =============================================================================
+# Orchestrator Settings
+# =============================================================================
+orchestrator:
+  max_iterations: 3  # Game planning benefits from more iteration (vs 1 for PCG)
+  actor_temperature: 0.6  # Higher for creativity in game design
+  critic_temperature: 0.2  # Lower for consistent, rigorous review
+
+# =============================================================================
+# LLM Configuration
+# =============================================================================
+llm:
+  provider: "anthropic"  # anthropic, openai, mock
+  model: "claude-sonnet-4-20250514"
+  max_tokens: 8192  # Larger for comprehensive GDD output
+
+# =============================================================================
+# Output Settings
+# =============================================================================
+output:
+  default_format: "json"  # json, markdown
+  include_map_hints: true  # Include /Map command hints for level generation
+  include_game_generator_prompt: true  # Include prompt for game-generator
+
+# =============================================================================
+# Context Management
+# =============================================================================
+# State-replacement strategy (from paper Section 3.3)
+context:
+  buffer_size: 32000  # tokens - larger for comprehensive GDD
+
+# =============================================================================
+# Timeout and Retry Settings
+# =============================================================================
+timeouts:
+  actor_ms: 120000  # 2 minutes for complex GDD generation
+  critic_ms: 60000   # 1 minute for review
+
+retries:
+  max_attempts: 3
+  backoff_base: 2.0
+
+# =============================================================================
+# Logging
+# =============================================================================
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# =============================================================================
+# GDD Schema Settings
+# =============================================================================
+gdd:
+  # Required sections for a complete GDD
+  required_sections:
+    - meta
+    - core_loop
+    - systems
+    - progression
+    - narrative
+    - technical
+  
+  # Validation settings
+  validation:
+    min_systems: 3  # Minimum number of game systems required
+    min_milestones: 5  # Minimum progression milestones
+    require_usp: true  # Require Unique Selling Point
