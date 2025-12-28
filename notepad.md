@@ -35,3 +35,39 @@
 - Pattern: GameDesignDocument.from_llm_response() handles JSON extraction from markdown code blocks
 
 Time taken: ~30 minutes (continuation session)
+
+[2025-12-29 03:41] - Task 6: Implement CLI Entry Point
+
+### DISCOVERED ISSUES
+- Initial CLI structure used callback with `invoke_without_command=True` which caused argument parsing issues
+- Typer interprets options after positional arguments as commands when subcommands exist
+- Windows CP949 encoding issues with Rich's Unicode spinners required stdout wrapper
+
+### IMPLEMENTATION DECISIONS
+- Changed from callback-based to command-based structure with `plan` command
+- CLI usage: `python main.py plan "concept" --mock` instead of positional arg in callback
+- Added Windows encoding fix with UTF-8 TextIOWrapper
+- Used Rich for progress display with spinners, tables, and panels
+- gdd_to_markdown() function converts GDD to human-readable markdown format
+- `--quiet` mode for raw JSON/markdown output to stdout (for piping)
+- `--no-preview` flag to suppress GDD preview panel
+
+### PROBLEMS FOR NEXT TASKS
+- None identified - CLI is fully functional with all tests passing
+
+### VERIFICATION RESULTS
+- Ran: `python -m pytest tests/test_cli.py -v` → 30 tests passed
+- Ran: `python -m pytest tests/ -v` → 204 tests passed total
+- Ran: `python -m ruff check main.py tests/test_cli.py` → All checks passed!
+- Manual test: `python main.py plan "zombie roguelike" --mock -q` → Valid JSON output
+- Manual test: `python main.py version` → Shows version info
+- Manual test: `python main.py validate gdd.json` → Validates GDD files
+
+### LEARNINGS
+- CLI Pattern: Use explicit commands (e.g., `plan`) instead of callback with `invoke_without_command=True` when subcommands exist
+- Typer quirk: Options after positional argument can be misinterpreted as commands
+- Windows encoding: Wrap stdout/stderr with UTF-8 TextIOWrapper for Rich console compatibility
+- Test pattern: Use `CliRunner` from `typer.testing` for CLI tests
+- Convention: Commands use verb names (plan, validate, version)
+
+Time taken: ~20 minutes (continuation session)
