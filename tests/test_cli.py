@@ -26,6 +26,7 @@ from main import (
     gdd_to_map_hints_prompt,
     OutputFormat,
 )
+from html_template import gdd_to_html
 from models import (
     GameDesignDocument,
     GameMeta,
@@ -520,11 +521,244 @@ class TestOutputFormat:
     def test_format_enum_members(self) -> None:
         """Test all format enum members exist."""
         formats = list(OutputFormat)
-        assert len(formats) == 4
+        assert len(formats) == 5
         assert OutputFormat.JSON in formats
         assert OutputFormat.MARKDOWN in formats
         assert OutputFormat.GAME_GENERATOR in formats
         assert OutputFormat.MAP_HINTS in formats
+        assert OutputFormat.HTML in formats
+
+    def test_html_format_value(self) -> None:
+        """Test HTML format value."""
+        assert OutputFormat.HTML.value == "html"
+
+
+# =============================================================================
+# GDD TO HTML CONVERSION TESTS
+# =============================================================================
+
+
+class TestGddToHtml:
+    """Tests for GDD to HTML conversion."""
+
+    def test_html_contains_doctype(self, sample_gdd: GameDesignDocument) -> None:
+        """Test HTML output contains DOCTYPE declaration."""
+        html = gdd_to_html(sample_gdd)
+        assert "<!DOCTYPE html>" in html
+
+    def test_html_contains_title(self, sample_gdd: GameDesignDocument) -> None:
+        """Test HTML output contains game title."""
+        html = gdd_to_html(sample_gdd)
+        assert sample_gdd.meta.title in html
+        assert f"<title>{sample_gdd.meta.title}" in html
+
+    def test_html_contains_meta_viewport(self, sample_gdd: GameDesignDocument) -> None:
+        """Test HTML output contains responsive viewport meta tag."""
+        html = gdd_to_html(sample_gdd)
+        assert 'name="viewport"' in html
+
+    def test_html_contains_embedded_css(self, sample_gdd: GameDesignDocument) -> None:
+        """Test HTML output contains embedded CSS."""
+        html = gdd_to_html(sample_gdd)
+        assert "<style>" in html
+        assert "</style>" in html
+        # Check for key CSS variables
+        assert "--bg-primary" in html
+        assert "--accent" in html
+        assert "--neon-blue" in html
+
+    def test_html_contains_hero_section(self, sample_gdd: GameDesignDocument) -> None:
+        """Test HTML output contains hero section."""
+        html = gdd_to_html(sample_gdd)
+        assert 'class="hero"' in html
+        assert "<h1>" in html
+
+    def test_html_contains_navigation(self, sample_gdd: GameDesignDocument) -> None:
+        """Test HTML output contains navigation bar."""
+        html = gdd_to_html(sample_gdd)
+        assert 'class="nav"' in html
+        assert 'href="#meta"' in html
+        assert 'href="#core-loop"' in html
+
+    def test_html_contains_core_loop_section(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test HTML output contains core loop section."""
+        html = gdd_to_html(sample_gdd)
+        assert 'id="core-loop"' in html
+        assert "Core Loop" in html
+        # Check that primary actions are present
+        for action in sample_gdd.core_loop.primary_actions:
+            assert action in html
+
+    def test_html_contains_systems_section(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test HTML output contains systems section."""
+        html = gdd_to_html(sample_gdd)
+        assert 'id="systems"' in html
+        for system in sample_gdd.systems:
+            assert system.name in html
+
+    def test_html_contains_progression_section(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test HTML output contains progression section."""
+        html = gdd_to_html(sample_gdd)
+        assert 'id="progression"' in html
+        assert "Milestones" in html
+
+    def test_html_contains_narrative_section(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test HTML output contains narrative section."""
+        html = gdd_to_html(sample_gdd)
+        assert 'id="narrative"' in html
+        assert "Story" in html
+        # Setting should be present
+        assert sample_gdd.narrative.setting[:30] in html
+
+    def test_html_contains_characters_section(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test HTML output contains characters section when characters exist."""
+        html = gdd_to_html(sample_gdd)
+        if sample_gdd.narrative.characters:
+            assert 'id="characters"' in html
+            for char in sample_gdd.narrative.characters:
+                assert char.name in html
+
+    def test_html_contains_technical_section(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test HTML output contains technical specs section."""
+        html = gdd_to_html(sample_gdd)
+        assert 'id="tech"' in html
+        assert sample_gdd.technical.recommended_engine.value in html.lower()
+        assert sample_gdd.technical.art_style.value.replace("_", " ") in html.lower()
+
+    def test_html_contains_footer(self, sample_gdd: GameDesignDocument) -> None:
+        """Test HTML output contains footer with metadata."""
+        html = gdd_to_html(sample_gdd)
+        assert "<footer>" in html
+        assert sample_gdd.schema_version in html
+
+    def test_html_escapes_special_characters(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test HTML properly escapes special characters."""
+        # Create a GDD with special characters
+        gdd_with_special = sample_gdd.model_copy(deep=True)
+        gdd_dict = gdd_with_special.model_dump()
+        gdd_dict["meta"]["title"] = "Test <Game> & 'Stuff'"
+        gdd_special = GameDesignDocument.model_validate(gdd_dict)
+
+        html = gdd_to_html(gdd_special)
+        # Should be escaped
+        assert "&lt;Game&gt;" in html
+        assert "&amp;" in html
+
+    def test_html_is_non_empty_string(self, sample_gdd: GameDesignDocument) -> None:
+        """Test HTML output is a substantial non-empty string."""
+        html = gdd_to_html(sample_gdd)
+        assert isinstance(html, str)
+        assert len(html) > 1000  # HTML should be substantial
+
+
+# =============================================================================
+# CLI HTML FORMAT TESTS
+# =============================================================================
+
+
+class TestPlanCommandHtml:
+    """Tests for the plan command with HTML format."""
+
+    def test_plan_with_html_format(self, cli_runner: CliRunner, temp_dir: Path) -> None:
+        """Test plan command with HTML output format."""
+        output_file = temp_dir / "test_output.html"
+        result = cli_runner.invoke(
+            app,
+            [
+                "plan",
+                "puzzle adventure game",
+                "--mock",
+                "--format",
+                "html",
+                "--output",
+                str(output_file),
+                "--no-preview",
+            ],
+        )
+
+        assert result.exit_code == 0, f"CLI failed: {result.stdout}"
+        assert output_file.exists(), "Output file was not created"
+
+        content = output_file.read_text(encoding="utf-8")
+        # Should be valid HTML
+        assert "<!DOCTYPE html>" in content
+        assert "<html" in content
+        assert "</html>" in content
+
+    def test_plan_html_contains_required_sections(
+        self, cli_runner: CliRunner, temp_dir: Path
+    ) -> None:
+        """Test HTML output contains all required sections."""
+        output_file = temp_dir / "test_sections.html"
+        result = cli_runner.invoke(
+            app,
+            [
+                "plan",
+                "roguelike shooter",
+                "--mock",
+                "--format",
+                "html",
+                "--output",
+                str(output_file),
+                "--no-preview",
+            ],
+        )
+
+        assert result.exit_code == 0
+        content = output_file.read_text(encoding="utf-8")
+
+        # Check for required sections
+        assert 'class="hero"' in content
+        assert 'class="nav"' in content
+        assert 'id="meta"' in content
+        assert 'id="core-loop"' in content
+        assert 'id="systems"' in content
+        assert 'id="progression"' in content
+        assert 'id="narrative"' in content
+        assert 'id="tech"' in content
+
+    def test_plan_html_contains_dark_theme_css(
+        self, cli_runner: CliRunner, temp_dir: Path
+    ) -> None:
+        """Test HTML output contains dark theme CSS variables."""
+        output_file = temp_dir / "test_theme.html"
+        result = cli_runner.invoke(
+            app,
+            [
+                "plan",
+                "space exploration",
+                "--mock",
+                "--format",
+                "html",
+                "--output",
+                str(output_file),
+                "--no-preview",
+            ],
+        )
+
+        assert result.exit_code == 0
+        content = output_file.read_text(encoding="utf-8")
+
+        # Check for dark theme CSS
+        assert "--bg-primary" in content
+        assert "--bg-secondary" in content
+        assert "--accent" in content
+        assert "--neon-blue" in content
+        assert "--neon-green" in content
 
 
 # =============================================================================

@@ -31,6 +31,7 @@ from rich.table import Table
 from models import GameDesignDocument, RefinementResult
 from orchestrator import GamePlanningOrchestrator, OrchestratorConfig
 from llm_provider import create_provider
+from html_template import gdd_to_html
 
 # Fix encoding issues on Windows (CP949 can't handle Rich's Unicode spinners)
 if sys.platform == "win32":
@@ -64,6 +65,7 @@ class OutputFormat(str, Enum):
     MARKDOWN = "markdown"
     GAME_GENERATOR = "game-generator"
     MAP_HINTS = "map-hints"
+    HTML = "html"
 
 
 class Provider(str, Enum):
@@ -637,6 +639,8 @@ def plan(
             content = gdd_to_game_generator_prompt(result.final_gdd)
         elif format == OutputFormat.MAP_HINTS:
             content = gdd_to_map_hints_prompt(result.final_gdd)
+        elif format == OutputFormat.HTML:
+            content = gdd_to_html(result.final_gdd)
         else:
             content = result.final_gdd.to_json(indent=2)
 
@@ -649,6 +653,26 @@ def plan(
                 console.print(
                     f"[green]OK[/green] GDD saved to [bold]{output_path}[/bold]"
                 )
+        elif format == OutputFormat.HTML:
+            # For HTML format without explicit output, save to auto-named file and open in browser
+            import re
+            import webbrowser
+
+            # Create slug from title
+            title_slug = re.sub(r"[^\w\s-]", "", result.final_gdd.meta.title.lower())
+            title_slug = re.sub(r"[\s_]+", "-", title_slug).strip("-")
+            output_path = Path(f"gdd-{title_slug}.html")
+            output_path.write_text(content, encoding="utf-8")
+
+            if not quiet:
+                console.print()
+                console.print(
+                    f"[green]OK[/green] GDD saved to [bold]{output_path}[/bold]"
+                )
+                console.print("[cyan]Opening in browser...[/cyan]")
+
+            # Open in default browser
+            webbrowser.open(output_path.absolute().as_uri())
         else:
             # Output to stdout
             if not quiet:

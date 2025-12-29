@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axis of Us - Game Design Document</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --accent: #e94560;
+            --accent-secondary: #0f3460;
+            --text-primary: #eaeaea;
+            --text-secondary: #a0a0a0;
+            --neon-blue: #00d9ff;
+            --neon-green: #06d6a0;
+            --neon-orange: #ef8354;
+            --warning: #e63946;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--accent-secondary) 100%);
+            padding: 80px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--neon-blue), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 40px rgba(233, 69, 96, 0.3);
+        }
+        
+        .hero .subtitle {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+        
+        .hero .tagline {
+            font-size: 1.2rem;
+            color: var(--neon-green);
+            font-style: italic;
+        }
+        
+        .badge-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        /* Navigation */
+        .nav {
+            background: var(--bg-secondary);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        
+        .nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            white-space: nowrap;
+            padding: 5px 15px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .nav a:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.1);
+        }
+        
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        section {
+            margin-bottom: 60px;
+        }
+        
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        h2 .icon {
+            font-size: 2rem;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+            margin: 30px 0 20px;
+            color: var(--neon-blue);
+        }
+        
+        h4 {
+            font-size: 1.2rem;
+            margin: 20px 0 15px;
+            color: var(--neon-orange);
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(233, 69, 96, 0.2);
+        }
+        
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: var(--bg-card);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        th {
+            background: var(--accent-secondary);
+            color: var(--neon-blue);
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        /* Player Roles */
+        .player-roles {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .player-card {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--accent-secondary) 100%);
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .player-card.keyboard {
+            border-color: var(--neon-green);
+        }
+        
+        .player-card.mouse {
+            border-color: var(--neon-blue);
+        }
+        
+        .player-card h3 {
+            margin-top: 0;
+        }
+        
+        .player-card .role-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .key {
+            display: inline-block;
+            background: var(--bg-primary);
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            margin: 2px;
+        }
+        
+        /* World Cards */
+        .world-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .world-card {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 4px solid;
+            transition: all 0.3s;
+        }
+        
+        .world-card:nth-child(1) { border-color: #6c757d; }
+        .world-card:nth-child(2) { border-color: #9b59b6; }
+        .world-card:nth-child(3) { border-color: #2ecc71; }
+        .world-card:nth-child(4) { border-color: #e74c3c; }
+        .world-card:nth-child(5) { border-color: #f39c12; }
+        .world-card:nth-child(6) { border-color: #00d9ff; }
+        
+        .world-card:hover {
+            transform: scale(1.02);
+        }
+        
+        .world-number {
+            font-size: 3rem;
+            font-weight: 800;
+            opacity: 0.3;
+            float: right;
+            margin-top: -10px;
+        }
+        
+        /* Bullet Items */
+        .bullet-item {
+            background: rgba(255,255,255,0.05);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 3px solid var(--accent);
+        }
+        
+        /* Core Loop Diagram */
+        .core-loop {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .loop-steps {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .loop-step {
+            background: var(--accent-secondary);
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .loop-arrow {
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+        
+        /* Special Bullets */
+        .special-bullet {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .bullet-box {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .bullet-box .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+            margin: 30px 0;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--accent);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            padding-left: 20px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+        
+        /* Characters */
+        .character-card {
+            display: flex;
+            gap: 20px;
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        
+        .character-avatar {
+            font-size: 4rem;
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        .character-info h4 {
+            margin-top: 0;
+        }
+        
+        .character-quote {
+            font-style: italic;
+            color: var(--text-secondary);
+            border-left: 3px solid var(--accent);
+            padding-left: 15px;
+            margin-top: 15px;
+        }
+        
+        /* Color Palette */
+        .color-palette {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .color-swatch {
+            text-align: center;
+        }
+        
+        .color-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        
+        .color-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--bg-secondary);
+            padding: 40px 20px;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        footer p {
+            color: var(--text-secondary);
+            margin: 5px 0;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            h2 {
+                font-size: 1.8rem;
+            }
+            
+            .player-roles {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Animations */
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(233, 69, 96, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(233, 69, 96, 0.6); }
+        }
+        
+        .glow {
+            animation: glow 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Axis of Us</h1>
+            <p class="subtitle">우리의 축</p>
+            <p class="tagline">"세상이 돌아도, 우리는 함께"</p>
+            <div class="badge-container">
+                <span class="badge">🎮 2인 협동</span>
+                <span class="badge">🔄 비대칭 플레이</span>
+                <span class="badge">🧩 퍼즐 플랫포머</span>
+                <span class="badge">🔫 슈터</span>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="#meta">📋 개요</a>
+            <a href="#controls">🎮 조작법</a>
+            <a href="#core-loop">🔄 코어 루프</a>
+            <a href="#systems">⚙️ 시스템</a>
+            <a href="#worlds">🌍 월드</a>
+            <a href="#story">📖 스토리</a>
+            <a href="#characters">👥 캐릭터</a>
+            <a href="#tech">💻 기술</a>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Meta Section -->
+        <section id="meta">
+            <h2><span class="icon">📋</span> 게임 개요</h2>
+            
+            <div class="card-grid">
+                <div class="card">
+                    <h4>🎯 장르</h4>
+                    <p><strong>2인 비대칭 협동 플랫포머</strong></p>
+                    <p style="color: var(--text-secondary)">퍼즐 플랫포머 + 슈터</p>
+                </div>
+                
+                <div class="card">
+                    <h4>🖥️ 플랫폼</h4>
+                    <p><strong>PC (Steam)</strong> - 1순위</p>
+                    <p style="color: var(--text-secondary)">Nintendo Switch - 2순위</p>
+                </div>
+                
+                <div class="card">
+                    <h4>👥 타겟 유저</h4>
+                    <p><strong>커플, 친구, 가족</strong></p>
+                    <p style="color: var(--text-secondary)">12세 이상 (ESRB: E10+)</p>
+                </div>
+                
+                <div class="card">
+                    <h4>⏱️ 개발 기간</h4>
+                    <p><strong>12개월</strong></p>
+                    <p style="color: var(--text-secondary)">프리프로덕션 2개월 + 프로덕션 8개월 + 폴리싱 2개월</p>
+                </div>
+            </div>
+            
+            <h3>💎 USP (Unique Selling Point)</h3>
+            <div class="special-bullet">
+                <div class="bullet-box">
+                    <div class="icon">🖱️⌨️</div>
+                    <strong>One Device, Two Roles</strong>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary)">한 컴퓨터에서 마우스와 키보드를 나눠 조작</p>
+                </div>
+                <div class="bullet-box">
+                    <div class="icon">🔄</div>
+                    <strong>World Rotation</strong>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary)">화면 회전으로 중력과 지형이 실시간 변화</p>
+                </div>
+                <div class="bullet-box">
+                    <div class="icon">💬</div>
+                    <strong>Forced Communication</strong>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary)">분리된 역할로 자연스러운 소통 필수</p>
+                </div>
+                <div class="bullet-box">
+                    <div class="icon">🤝</div>
+                    <strong>Trust Building</strong>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary)">서로를 신뢰해야만 진행 가능</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Controls Section -->
+        <section id="controls">
+            <h2><span class="icon">🎮</span> 조작법</h2>
+            
+            <div class="player-roles">
+                <div class="player-card keyboard">
+                    <div class="role-icon">⌨️</div>
+                    <h3 style="color: var(--neon-green)">Navigator (나비)</h3>
+                    <p style="margin-bottom: 20px">캐릭터의 이동을 담당하는 탐색자</p>
+                    
+                    <table>
+                        <tr>
+                            <td><span class="key">A</span> <span class="key">D</span></td>
+                            <td>좌우 이동</td>
+                        </tr>
+                        <tr>
+                            <td><span class="key">W</span> / <span class="key">Space</span></td>
+                            <td>점프</td>
+                        </tr>
+                        <tr>
+                            <td><span class="key">S</span></td>
+                            <td>웅크리기 / 빠른 낙하</td>
+                        </tr>
+                        <tr>
+                            <td><span class="key">Shift</span></td>
+                            <td>대시 (쿨타임 2초)</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="player-card mouse">
+                    <div class="role-icon">🖱️</div>
+                    <h3 style="color: var(--neon-blue)">Gunner (건)</h3>
+                    <p style="margin-bottom: 20px">조준과 월드 회전을 담당하는 사수</p>
+                    
+                    <table>
+                        <tr>
+                            <td>🖱️ 이동</td>
+                            <td>360도 자유 조준</td>
+                        </tr>
+                        <tr>
+                            <td>🖱️ 좌클릭</td>
+                            <td>발사</td>
+                        </tr>
+                        <tr>
+                            <td>🖱️ 우클릭 + 드래그</td>
+                            <td>월드 90도 회전</td>
+                        </tr>
+                        <tr>
+                            <td>🖱️ 휠</td>
+                            <td>줌 인/아웃</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Core Loop Section -->
+        <section id="core-loop">
+            <h2><span class="icon">🔄</span> 코어 루프</h2>
+            
+            <div class="core-loop glow">
+                <h3 style="margin-top: 0">게임 진행 흐름</h3>
+                <div class="loop-steps">
+                    <span class="loop-step">🚪 진입</span>
+                    <span class="loop-arrow">→</span>
+                    <span class="loop-step">🔍 탐색/이동</span>
+                    <span class="loop-arrow">→</span>
+                    <span class="loop-step">🧩 퍼즐/전투</span>
+                    <span class="loop-arrow">→</span>
+                    <span class="loop-step">✅ 클리어</span>
+                    <span class="loop-arrow">→</span>
+                    <span class="loop-step">🎁 보상</span>
+                </div>
+            </div>
+            
+            <h3>🎁 보상 시스템</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>보상</th>
+                        <th>획득 조건</th>
+                        <th>효과</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>⭐ 별 (Stars)</td>
+                        <td>스테이지 클리어</td>
+                        <td>새 월드 언락</td>
+                    </tr>
+                    <tr>
+                        <td>🔮 파편 (Fragments)</td>
+                        <td>숨겨진 장소 발견</td>
+                        <td>코스메틱 언락</td>
+                    </tr>
+                    <tr>
+                        <td>🏆 메달</td>
+                        <td>타임어택/노데스 클리어</td>
+                        <td>업적, 특수 스킨</td>
+                    </tr>
+                    <tr>
+                        <td>💬 대화 조각</td>
+                        <td>특정 구간 도달</td>
+                        <td>스토리 해금</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>⏱️ 플레이 시간</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>스테이지당</h4>
+                    <p style="font-size: 2rem; font-weight: bold; color: var(--neon-blue)">5~10분</p>
+                </div>
+                <div class="card">
+                    <h4>월드당</h4>
+                    <p style="font-size: 2rem; font-weight: bold; color: var(--neon-green)">30~45분</p>
+                </div>
+                <div class="card">
+                    <h4>전체 플레이타임</h4>
+                    <p style="font-size: 2rem; font-weight: bold; color: var(--accent)">6~8시간</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Systems Section -->
+        <section id="systems">
+            <h2><span class="icon">⚙️</span> 게임 시스템</h2>
+            
+            <h3>🔫 특수 탄환 시스템</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>탄환</th>
+                        <th>언락 시점</th>
+                        <th>효과</th>
+                        <th>용도</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>🔵 반사탄</td>
+                        <td>월드 2</td>
+                        <td>벽에서 1회 반사</td>
+                        <td>코너 뒤 적/스위치</td>
+                    </tr>
+                    <tr>
+                        <td>🟣 중력탄</td>
+                        <td>월드 3</td>
+                        <td>물체를 일시적으로 띄움</td>
+                        <td>발판 생성</td>
+                    </tr>
+                    <tr>
+                        <td>🟡 연결탄</td>
+                        <td>월드 4</td>
+                        <td>두 물체를 연결</td>
+                        <td>퍼즐 전용</td>
+                    </tr>
+                    <tr>
+                        <td>⚪ 시간탄</td>
+                        <td>월드 5</td>
+                        <td>맞은 대상 3초간 정지</td>
+                        <td>움직이는 발판 고정</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>🔄 월드 회전 시스템</h3>
+            <div class="card">
+                <div class="card-grid" style="margin: 0">
+                    <div>
+                        <h4 style="margin-top: 0">핵심 파라미터</h4>
+                        <ul style="list-style: none; padding: 0">
+                            <li class="bullet-item">회전 단위: <strong>90도</strong></li>
+                            <li class="bullet-item">회전 속도: <strong>0.5초</strong></li>
+                            <li class="bullet-item">쿨타임: <strong>1.5초</strong></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="margin-top: 0">회전 규칙</h4>
+                        <ul style="list-style: none; padding: 0">
+                            <li class="bullet-item">🌍 월드 회전 시 중력 방향도 변화</li>
+                            <li class="bullet-item">⚓ 앵커 표시 오브젝트는 위치 유지</li>
+                            <li class="bullet-item">🛡️ 회전 중 캐릭터는 보호 상태</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>🤝 협동 메카닉</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>상황</th>
+                        <th>Navigator 역할</th>
+                        <th>Gunner 역할</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>높은 벽</td>
+                        <td>점프 타이밍 맞추기</td>
+                        <td>월드 90도 회전</td>
+                    </tr>
+                    <tr>
+                        <td>적 처치</td>
+                        <td>회피 이동</td>
+                        <td>조준 및 사격</td>
+                    </tr>
+                    <tr>
+                        <td>압력판 퍼즐</td>
+                        <td>판 위에 서기</td>
+                        <td>열린 문으로 유도탄 발사</td>
+                    </tr>
+                    <tr>
+                        <td>보스전</td>
+                        <td>약점 위치 이동</td>
+                        <td>약점 조준/회전 타이밍</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <!-- Worlds Section -->
+        <section id="worlds">
+            <h2><span class="icon">🌍</span> 월드 구성</h2>
+            
+            <div class="world-grid">
+                <div class="world-card">
+                    <span class="world-number">1</span>
+                    <h4>⚙️ 기계 공장</h4>
+                    <p><strong>Tutorial World</strong></p>
+                    <p style="color: var(--text-secondary)">톱니바퀴, 컨베이어 벨트, 증기</p>
+                    <p style="margin-top: 10px">🎯 기믹: 움직이는 발판, 으깨는 프레스</p>
+                </div>
+                
+                <div class="world-card">
+                    <span class="world-number">2</span>
+                    <h4>💎 수정 동굴</h4>
+                    <p><strong>반사탄 언락</strong></p>
+                    <p style="color: var(--text-secondary)">발광 수정, 지하 호수, 종유석</p>
+                    <p style="margin-top: 10px">🎯 기믹: 빛 반사 퍼즐, 부서지는 수정</p>
+                </div>
+                
+                <div class="world-card">
+                    <span class="world-number">3</span>
+                    <h4>🌿 하늘 정원</h4>
+                    <p><strong>중력탄 언락</strong></p>
+                    <p style="color: var(--text-secondary)">공중 섬, 거대 식물, 구름</p>
+                    <p style="margin-top: 10px">🎯 기믹: 바람 영역, 자라나는 덩굴</p>
+                </div>
+                
+                <div class="world-card">
+                    <span class="world-number">4</span>
+                    <h4>🔥 용암 신전</h4>
+                    <p><strong>연결탄 언락</strong></p>
+                    <p style="color: var(--text-secondary)">고대 석조, 용암 강, 부서진 신상</p>
+                    <p style="margin-top: 10px">🎯 기믹: 상승 열기류, 응고되는 용암</p>
+                </div>
+                
+                <div class="world-card">
+                    <span class="world-number">5</span>
+                    <h4>🕐 시계탑</h4>
+                    <p><strong>시간탄 언락</strong></p>
+                    <p style="color: var(--text-secondary)">거대 시계, 진자, 정교한 기어</p>
+                    <p style="margin-top: 10px">🎯 기믹: 시간 기반 발판, 움직이는 바늘</p>
+                </div>
+                
+                <div class="world-card">
+                    <span class="world-number">6</span>
+                    <h4>⚡ 코어</h4>
+                    <p><strong>최종 월드</strong></p>
+                    <p style="color: var(--text-secondary)">에너지 도관, 불안정한 공간</p>
+                    <p style="margin-top: 10px">🎯 기믹: 복합 회전, 모든 요소 등장</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Story Section -->
+        <section id="story">
+            <h2><span class="icon">📖</span> 스토리</h2>
+            
+            <div class="card" style="border-left: 4px solid var(--accent)">
+                <h3 style="margin-top: 0">🌌 세계관: "축이 부러진 세계"</h3>
+                <p style="font-size: 1.1rem; line-height: 2">
+                    먼 미래, 인류는 <strong>"회전 엔진(Axis Engine)"</strong>을 발명해 행성의 자전을 제어하는 기술을 개발했다. 
+                    이 기술로 완벽한 기후 조절이 가능해졌지만, 어느 날 엔진이 폭주하며 세계의 중력 축이 불안정해졌다.
+                </p>
+                <p style="font-size: 1.1rem; line-height: 2; margin-top: 15px">
+                    이제 세계는 예고 없이 회전하고, 중력은 제멋대로 바뀌며, 대부분의 인류는 지하 셸터로 피신했다. 
+                    오직 <strong>"축 조율사(Axis Tuners)"</strong>라 불리는 특수 훈련을 받은 이들만이 불안정한 지상에서 활동할 수 있다.
+                </p>
+            </div>
+            
+            <h3>📜 스토리 진행</h3>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h4>월드 1: 기계 공장</h4>
+                    <p>첫 임무, 공장 조사 → 고대 기록 발견</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>월드 2: 수정 동굴</h4>
+                    <p>동굴 탐험 → 회전 엔진이 외계 기술 기반임을 알게 됨</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>월드 3: 하늘 정원</h4>
+                    <p>하늘 정원 도달 → 과거 축 조율사들의 기록 발견</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>월드 4: 용암 신전</h4>
+                    <p>용암 신전 진입 → 엔진 폭주의 진짜 원인 (인위적 사보타주)</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>월드 5: 시계탑</h4>
+                    <p>시계탑 등반 → 흑막의 정체 - 불멸을 꿈꾸는 초대 조율사</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>월드 6: 코어</h4>
+                    <p>코어 진입 → 최종 대결, 세계의 축 복원</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Characters Section -->
+        <section id="characters">
+            <h2><span class="icon">👥</span> 캐릭터</h2>
+            
+            <div class="character-card">
+                <div class="character-avatar">🏃</div>
+                <div class="character-info">
+                    <h4 style="color: var(--neon-green)">NAVI (나비) - 키보드 플레이어</h4>
+                    <p><strong>역할:</strong> Navigator (탐색자)</p>
+                    <p><strong>성격:</strong> 신중하고 분석적, 계획을 세우는 타입</p>
+                    <p><strong>배경:</strong> 엔지니어 출신, 기계에 대한 깊은 이해</p>
+                    <div class="character-quote">
+                        "거기 발판, 3초 후에 무너져. 내가 셀 테니까 점프 준비해."
+                    </div>
+                </div>
+            </div>
+            
+            <div class="character-card">
+                <div class="character-avatar">🎯</div>
+                <div class="character-info">
+                    <h4 style="color: var(--neon-blue)">GUN (건) - 마우스 플레이어</h4>
+                    <p><strong>역할:</strong> Gunner & Rotator (사수 겸 회전 조율사)</p>
+                    <p><strong>성격:</strong> 즉흥적이고 대담, 행동파</p>
+                    <p><strong>배경:</strong> 전직 사냥꾼, 뛰어난 반사신경</p>
+                    <div class="character-quote">
+                        "왼쪽 적 3, 오른쪽 2. 돌릴까?"
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Tech Section -->
+        <section id="tech">
+            <h2><span class="icon">💻</span> 기술 사양</h2>
+            
+            <div class="card-grid">
+                <div class="card">
+                    <h4>🎮 권장 엔진</h4>
+                    <p style="font-size: 1.5rem; font-weight: bold">Unity 2022 LTS</p>
+                    <ul style="color: var(--text-secondary); margin-top: 10px">
+                        <li>2D 플랫포머 최적화</li>
+                        <li>New Input System</li>
+                        <li>Physics 2D</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h4>🎨 아트 스타일</h4>
+                    <p style="font-size: 1.5rem; font-weight: bold">네온 디젤펑크</p>
+                    <p style="color: var(--text-secondary); margin-top: 10px">1940년대 산업 미학 + 네온 조명</p>
+                </div>
+                
+                <div class="card">
+                    <h4>📺 해상도 & 프레임</h4>
+                    <p style="font-size: 1.5rem; font-weight: bold">1920x1080 @ 60 FPS</p>
+                    <p style="color: var(--text-secondary); margin-top: 10px">32 PPU (Pixels Per Unit)</p>
+                </div>
+            </div>
+            
+            <h3>🎨 컬러 팔레트</h3>
+            <div class="color-palette">
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #2D3142"></div>
+                    <div class="color-label">배경<br>#2D3142</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #4F5D75"></div>
+                    <div class="color-label">전경<br>#4F5D75</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #EF8354"></div>
+                    <div class="color-label">캐릭터<br>#EF8354</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #E63946"></div>
+                    <div class="color-label">위험<br>#E63946</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #06D6A0"></div>
+                    <div class="color-label">상호작용<br>#06D6A0</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #118AB2"></div>
+                    <div class="color-label">회전 UI<br>#118AB2</div>
+                </div>
+            </div>
+            
+            <h3>🎵 오디오</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>상황</th>
+                        <th>스타일</th>
+                        <th>BPM</th>
+                        <th>레퍼런스</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>탐험</td>
+                        <td>앰비언트 일렉트로닉</td>
+                        <td>80-100</td>
+                        <td>Hollow Knight</td>
+                    </tr>
+                    <tr>
+                        <td>퍼즐</td>
+                        <td>미니멀 피아노 + 신스</td>
+                        <td>90-110</td>
+                        <td>Portal 2</td>
+                    </tr>
+                    <tr>
+                        <td>전투</td>
+                        <td>인더스트리얼 록</td>
+                        <td>140-160</td>
+                        <td>DOOM 2016 (lite)</td>
+                    </tr>
+                    <tr>
+                        <td>보스</td>
+                        <td>오케스트라 + EDM</td>
+                        <td>160-180</td>
+                        <td>Cuphead</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+    
+    <!-- Footer -->
+    <footer>
+        <p><strong>Axis of Us</strong> - Game Design Document v1.0</p>
+        <p>Generated by Game Planner - Dual-Agent Actor-Critic System</p>
+        <p style="margin-top: 20px">📅 2025-12-29</p>
+    </footer>
+</body>
+</html>
