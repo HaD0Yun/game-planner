@@ -6,3 +6,10 @@ dist/
 build/
 .venv/
 *.env
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# Windows artifacts
+nul
