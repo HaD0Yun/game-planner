@@ -18,6 +18,9 @@ import html
 
 from models import GameDesignDocument
 
+# Module-level constants
+CORE_LOOP_COLORS = ["#e94560", "#00d9ff", "#06d6a0", "#ef8354"]
+
 
 def _escape(text: str) -> str:
     """Escape HTML special characters."""
@@ -42,6 +45,8 @@ def _escape_mermaid(text: str) -> str:
 
 def _generate_core_loop_mermaid(gdd: "GameDesignDocument") -> str:
     """Generate a Mermaid flowchart for the core gameplay loop."""
+    if not hasattr(gdd, "core_loop") or not gdd.core_loop:
+        return ""
     loop = gdd.core_loop
     actions = loop.primary_actions
 
@@ -68,10 +73,9 @@ def _generate_core_loop_mermaid(gdd: "GameDesignDocument") -> str:
     lines.append("")
     lines.append("    %% Styling")
     for i in range(len(actions)):
-        color_idx = i % 4
-        colors = ["#e94560", "#00d9ff", "#06d6a0", "#ef8354"]
+        color_idx = i % len(CORE_LOOP_COLORS)
         lines.append(
-            f"    style A{i} fill:{colors[color_idx]},stroke:#fff,stroke-width:2px,color:#fff"
+            f"    style A{i} fill:{CORE_LOOP_COLORS[color_idx]},stroke:#fff,stroke-width:2px,color:#fff"
         )
 
     return "\n".join(lines)
@@ -79,6 +83,8 @@ def _generate_core_loop_mermaid(gdd: "GameDesignDocument") -> str:
 
 def _generate_systems_mermaid(gdd: "GameDesignDocument") -> str:
     """Generate a Mermaid diagram showing game system relationships."""
+    if not hasattr(gdd, "systems") or not gdd.systems:
+        return ""
     systems = gdd.systems
 
     if len(systems) < 2:
@@ -103,9 +109,9 @@ def _generate_systems_mermaid(gdd: "GameDesignDocument") -> str:
         node_id = f"S{i}"
         for dep in system.dependencies:
             dep_lower = dep.lower()
-            # Try to find matching system
+            # Try to find matching system (case-insensitive exact match)
             for sys_name, dep_id in system_ids.items():
-                if dep_lower in sys_name or sys_name in dep_lower:
+                if dep_lower == sys_name.lower():
                     lines.append(f"    {dep_id} --> {node_id}")
                     break
 
