@@ -13,6 +13,10 @@ Transform simple game concepts into comprehensive, production-ready Game Design 
 - **Multi-format Output**: JSON and Markdown export formats
 - **Downstream Integration**: Compatible with game-generator and /Map command
 
+## Documentation
+
+- [System Specification (시스템 기획서)](./SYSTEM_SPECIFICATION.md) - Detailed technical specification in Korean/English
+
 ## Architecture
 
 ```
