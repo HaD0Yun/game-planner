@@ -19,7 +19,13 @@ from typing import Generator
 import pytest
 from typer.testing import CliRunner
 
-from main import app, gdd_to_markdown, gdd_to_game_generator_prompt, OutputFormat
+from main import (
+    app,
+    gdd_to_markdown,
+    gdd_to_game_generator_prompt,
+    gdd_to_map_hints_prompt,
+    OutputFormat,
+)
 from models import (
     GameDesignDocument,
     GameMeta,
@@ -507,13 +513,18 @@ class TestOutputFormat:
         """Test game-generator format value."""
         assert OutputFormat.GAME_GENERATOR.value == "game-generator"
 
+    def test_map_hints_format_value(self) -> None:
+        """Test map-hints format value."""
+        assert OutputFormat.MAP_HINTS.value == "map-hints"
+
     def test_format_enum_members(self) -> None:
         """Test all format enum members exist."""
         formats = list(OutputFormat)
-        assert len(formats) == 3
+        assert len(formats) == 4
         assert OutputFormat.JSON in formats
         assert OutputFormat.MARKDOWN in formats
         assert OutputFormat.GAME_GENERATOR in formats
+        assert OutputFormat.MAP_HINTS in formats
 
 
 # =============================================================================
@@ -587,6 +598,216 @@ class TestGddToGameGeneratorPrompt:
         prompt = gdd_to_game_generator_prompt(sample_gdd)
         assert isinstance(prompt, str)
         assert len(prompt) > 100  # Should be a substantial prompt
+
+
+# =============================================================================
+# GDD TO MAP HINTS PROMPT CONVERSION TESTS
+# =============================================================================
+
+
+class TestGddToMapHintsPrompt:
+    """Tests for GDD to map hints prompt conversion."""
+
+    def test_prompt_contains_title(self, sample_gdd: GameDesignDocument) -> None:
+        """Test map hints prompt contains game title."""
+        prompt = gdd_to_map_hints_prompt(sample_gdd)
+        assert sample_gdd.meta.title in prompt
+
+    def test_prompt_without_map_hints(self, sample_gdd: GameDesignDocument) -> None:
+        """Test map hints prompt when GDD has no map_hints."""
+        # Create a GDD without map_hints
+        gdd_without_hints = sample_gdd.model_copy(deep=True)
+        gdd_without_hints_dict = gdd_without_hints.model_dump()
+        gdd_without_hints_dict["map_hints"] = None
+        gdd_no_hints = GameDesignDocument.model_validate(gdd_without_hints_dict)
+
+        prompt = gdd_to_map_hints_prompt(gdd_no_hints)
+
+        assert "No Map Hints Available" in prompt
+        assert "Derived from Game Design" in prompt
+        assert "Setting:" in prompt
+        assert "Suggested /Map Command" in prompt
+
+    def test_prompt_with_map_hints_contains_biomes(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test map hints prompt contains biomes when map_hints present."""
+
+        # Add map_hints to sample_gdd
+        gdd_with_hints = sample_gdd.model_copy(deep=True)
+        gdd_dict = gdd_with_hints.model_dump()
+        gdd_dict["map_hints"] = {
+            "biomes": ["urban", "ruins"],
+            "map_size": "large",
+            "obstacles": [
+                {
+                    "type": "wall",
+                    "density": "medium",
+                    "purpose": "Create chokepoints for defensive gameplay",
+                }
+            ],
+            "special_features": [
+                {
+                    "name": "Safe Room",
+                    "frequency": "rare",
+                    "requirements": ["Near spawn point"],
+                    "description": "A fortified room where players can rest and save",
+                }
+            ],
+            "connectivity": "high",
+            "generation_style": "procedural_rooms",
+        }
+        gdd_hints = GameDesignDocument.model_validate(gdd_dict)
+
+        prompt = gdd_to_map_hints_prompt(gdd_hints)
+
+        assert "## Biomes" in prompt
+        assert "urban" in prompt
+        assert "ruins" in prompt
+
+    def test_prompt_with_map_hints_contains_configuration(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test map hints prompt contains map configuration."""
+
+        gdd_with_hints = sample_gdd.model_copy(deep=True)
+        gdd_dict = gdd_with_hints.model_dump()
+        gdd_dict["map_hints"] = {
+            "biomes": ["forest"],
+            "map_size": "medium",
+            "connectivity": "high",
+            "verticality": "low",
+            "generation_style": "cellular_automata",
+        }
+        gdd_hints = GameDesignDocument.model_validate(gdd_dict)
+
+        prompt = gdd_to_map_hints_prompt(gdd_hints)
+
+        assert "## Map Configuration" in prompt
+        assert "Size:" in prompt
+        assert "medium" in prompt
+        assert "Connectivity:" in prompt
+        assert "high" in prompt
+
+    def test_prompt_contains_map_command_reference(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test map hints prompt contains /Map command reference."""
+
+        gdd_with_hints = sample_gdd.model_copy(deep=True)
+        gdd_dict = gdd_with_hints.model_dump()
+        gdd_dict["map_hints"] = {
+            "biomes": ["dungeon"],
+            "map_size": "small",
+            "connectivity": "medium",
+            "generation_style": "bsp_dungeon",
+        }
+        gdd_hints = GameDesignDocument.model_validate(gdd_dict)
+
+        prompt = gdd_to_map_hints_prompt(gdd_hints)
+
+        assert "## /Map Command Reference" in prompt
+        assert "/Map" in prompt
+        assert "biomes:" in prompt
+
+    def test_prompt_contains_twc4_hints(self, sample_gdd: GameDesignDocument) -> None:
+        """Test map hints prompt contains TWC4 configuration hints."""
+
+        gdd_with_hints = sample_gdd.model_copy(deep=True)
+        gdd_dict = gdd_with_hints.model_dump()
+        gdd_dict["map_hints"] = {
+            "biomes": ["cave"],
+            "map_size": "large",
+            "generation_style": "cellular_automata",
+        }
+        gdd_hints = GameDesignDocument.model_validate(gdd_dict)
+
+        prompt = gdd_to_map_hints_prompt(gdd_hints)
+
+        assert "## TileWorldCreator4 Configuration Hints" in prompt
+        assert "Suggested Generator:" in prompt
+        assert "Suggested Grid Size:" in prompt
+
+    def test_prompt_contains_json_export(self, sample_gdd: GameDesignDocument) -> None:
+        """Test map hints prompt contains JSON export section."""
+
+        gdd_with_hints = sample_gdd.model_copy(deep=True)
+        gdd_dict = gdd_with_hints.model_dump()
+        gdd_dict["map_hints"] = {
+            "biomes": ["plains"],
+            "map_size": "medium",
+        }
+        gdd_hints = GameDesignDocument.model_validate(gdd_dict)
+
+        prompt = gdd_to_map_hints_prompt(gdd_hints)
+
+        assert "## JSON Export" in prompt
+        assert "```json" in prompt
+
+    def test_prompt_is_non_empty_string(self, sample_gdd: GameDesignDocument) -> None:
+        """Test map hints prompt is a non-empty string."""
+        prompt = gdd_to_map_hints_prompt(sample_gdd)
+        assert isinstance(prompt, str)
+        assert len(prompt) > 50  # Should be a substantial output
+
+
+# =============================================================================
+# CLI MAP HINTS FORMAT TESTS
+# =============================================================================
+
+
+class TestPlanCommandMapHints:
+    """Tests for the plan command with map-hints format."""
+
+    def test_plan_with_map_hints_format(
+        self, cli_runner: CliRunner, temp_dir: Path
+    ) -> None:
+        """Test plan command with map-hints output format."""
+        output_file = temp_dir / "map_hints.txt"
+        result = cli_runner.invoke(
+            app,
+            [
+                "plan",
+                "dungeon crawler roguelike",
+                "--mock",
+                "--format",
+                "map-hints",
+                "--output",
+                str(output_file),
+                "--no-preview",
+            ],
+        )
+
+        assert result.exit_code == 0, f"CLI failed: {result.stdout}"
+        assert output_file.exists(), "Output file was not created"
+
+        content = output_file.read_text(encoding="utf-8")
+        # Should contain map hints header
+        assert "Map Generation Hints" in content
+
+    def test_plan_map_hints_contains_map_command(
+        self, cli_runner: CliRunner, temp_dir: Path
+    ) -> None:
+        """Test map-hints output contains /Map command suggestion."""
+        output_file = temp_dir / "map_hints.txt"
+        result = cli_runner.invoke(
+            app,
+            [
+                "plan",
+                "exploration adventure game",
+                "--mock",
+                "--format",
+                "map-hints",
+                "--output",
+                str(output_file),
+                "--no-preview",
+            ],
+        )
+
+        assert result.exit_code == 0
+        content = output_file.read_text(encoding="utf-8")
+        # Should contain /Map command reference
+        assert "/Map" in content
 
 
 # =============================================================================

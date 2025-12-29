@@ -63,6 +63,7 @@ class OutputFormat(str, Enum):
     JSON = "json"
     MARKDOWN = "markdown"
     GAME_GENERATOR = "game-generator"
+    MAP_HINTS = "map-hints"
 
 
 class Provider(str, Enum):
@@ -297,6 +298,159 @@ def gdd_to_game_generator_prompt(gdd: GameDesignDocument) -> str:
     return "\n".join(lines)
 
 
+def gdd_to_map_hints_prompt(gdd: GameDesignDocument) -> str:
+    """
+    Extract and format map generation hints from a GDD for /Map command usage.
+
+    This format is designed to work with the /Map command (TileWorldCreator4)
+    which generates procedural maps based on the game design specifications.
+
+    The output can be directly passed to /Map command or used as reference
+    for level design.
+
+    Args:
+        gdd: GameDesignDocument to extract map hints from
+
+    Returns:
+        Formatted string with map generation hints for /Map command
+    """
+    lines = []
+
+    # Header
+    lines.append(f"# Map Generation Hints for: {gdd.meta.title}")
+    lines.append("")
+
+    # Check if map_hints exists
+    if gdd.map_hints is None:
+        lines.append("## No Map Hints Available")
+        lines.append("")
+        lines.append("This GDD does not include explicit map generation hints.")
+        lines.append("Generate hints based on game context:")
+        lines.append("")
+
+        # Derive hints from narrative setting
+        lines.append("### Derived from Game Design")
+        lines.append("")
+        lines.append(f"**Setting:** {gdd.narrative.setting}")
+        lines.append(f"**Themes:** {', '.join(gdd.narrative.themes)}")
+        lines.append(f"**Art Style:** {gdd.technical.art_style.value}")
+        lines.append("")
+
+        # Suggest /Map command based on setting
+        lines.append("### Suggested /Map Command")
+        lines.append("")
+        lines.append("```")
+        lines.append(
+            f"/Map Create a map for a {gdd.meta.genres[0].value} game set in {gdd.narrative.setting[:100]}"
+        )
+        lines.append("```")
+
+        return "\n".join(lines)
+
+    # Full map hints available
+    hints = gdd.map_hints
+
+    # Quick reference for /Map command
+    lines.append("## /Map Command Reference")
+    lines.append("")
+    lines.append("```")
+    lines.append(f"/Map {hints.to_map_command_args()}")
+    lines.append("```")
+    lines.append("")
+
+    # Biomes section
+    lines.append("## Biomes")
+    lines.append("")
+    for biome in hints.biomes:
+        lines.append(f"- {biome.value}")
+    lines.append("")
+
+    # Map configuration
+    lines.append("## Map Configuration")
+    lines.append("")
+    lines.append(f"- **Size:** {hints.map_size}")
+    lines.append(f"- **Connectivity:** {hints.connectivity}")
+    lines.append(f"- **Verticality:** {hints.verticality}")
+    lines.append(f"- **Generation Style:** {hints.generation_style}")
+    lines.append("")
+
+    # Obstacles
+    if hints.obstacles:
+        lines.append("## Obstacles")
+        lines.append("")
+        for obstacle in hints.obstacles:
+            lines.append(f"### {obstacle.type.capitalize()}")
+            lines.append(f"- **Density:** {obstacle.density}")
+            lines.append(f"- **Purpose:** {obstacle.purpose}")
+            lines.append("")
+
+    # Special features
+    if hints.special_features:
+        lines.append("## Special Features")
+        lines.append("")
+        for feature in hints.special_features:
+            lines.append(f"### {feature.name}")
+            lines.append(f"- **Frequency:** {feature.frequency}")
+            lines.append(f"- **Description:** {feature.description}")
+            if feature.requirements:
+                lines.append(f"- **Requirements:** {', '.join(feature.requirements)}")
+            lines.append("")
+
+    # Enemy spawn zones
+    if hints.enemy_spawn_zones:
+        lines.append("## Enemy Spawn Zones")
+        lines.append("")
+        for zone in hints.enemy_spawn_zones:
+            lines.append(f"- {zone}")
+        lines.append("")
+
+    # Visual themes
+    if hints.visual_themes:
+        lines.append("## Visual Themes")
+        lines.append("")
+        for theme in hints.visual_themes:
+            lines.append(f"- {theme}")
+        lines.append("")
+
+    # TWC4 Configuration Hints
+    lines.append("## TileWorldCreator4 Configuration Hints")
+    lines.append("")
+    lines.append("Based on the map hints, suggested TWC4 settings:")
+    lines.append("")
+
+    # Suggest generator based on generation_style
+    generator_map = {
+        "procedural_rooms": "BSPDungeon",
+        "cellular_automata": "CellularAutomata",
+        "bsp_dungeon": "BSPDungeon",
+        "wave_function_collapse": "RandomNoise",
+        "perlin_noise": "RandomNoise",
+    }
+    suggested_generator = generator_map.get(hints.generation_style, "CellularAutomata")
+    lines.append(f"- **Suggested Generator:** {suggested_generator}")
+
+    # Size mapping
+    size_map = {
+        "tiny": "32x32",
+        "small": "48x48",
+        "medium": "64x64",
+        "large": "96x96",
+        "huge": "128x128",
+    }
+    suggested_size = size_map.get(hints.map_size, "64x64")
+    lines.append(f"- **Suggested Grid Size:** {suggested_size}")
+    lines.append("")
+
+    # JSON export for programmatic use
+    lines.append("## JSON Export")
+    lines.append("")
+    lines.append("```json")
+    lines.append(hints.model_dump_json(indent=2))
+    lines.append("```")
+
+    return "\n".join(lines)
+
+
 def display_result_summary(result: RefinementResult) -> None:
     """Display a rich summary of the generation result."""
     # Create status panel
@@ -481,6 +635,8 @@ def plan(
             content = gdd_to_markdown(result.final_gdd)
         elif format == OutputFormat.GAME_GENERATOR:
             content = gdd_to_game_generator_prompt(result.final_gdd)
+        elif format == OutputFormat.MAP_HINTS:
+            content = gdd_to_map_hints_prompt(result.final_gdd)
         else:
             content = result.final_gdd.to_json(indent=2)
 
