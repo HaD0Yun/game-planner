@@ -40,8 +40,6 @@ from models import (
     SystemParameter,
     GameSystem,
     Milestone,
-    UnlockItem,
-    DifficultyLevel,
     Progression,
     Character,
     Narrative,
@@ -55,7 +53,6 @@ from models import (
     GameDesignDocument,
     BlockingIssue,
     CriticFeedback,
-    IterationRecord,
     RefinementResult,
 )
 
