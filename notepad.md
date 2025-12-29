@@ -150,3 +150,36 @@ Time taken: ~15 minutes
 - Bash works on Windows via Git Bash/MSYS2 shell
 
 Time taken: ~10 minutes
+
+[2025-12-29 11:34] - Task 10: Add game-generator Integration
+
+### DISCOVERED ISSUES
+- No issues found - game-generator project was in expected location
+- game-generator input format is simple: just a text prompt string passed to AI
+
+### IMPLEMENTATION DECISIONS
+- Created `gdd_to_game_generator_prompt()` function in main.py
+- Format converts GDD to a detailed text prompt optimized for browser game generation
+- Prompt includes: title, genres, gameplay (actions, challenge, rewards), mechanics, visual style, unique features
+- Added browser game requirements (single HTML, score tracking, restart, controls)
+- Limited mechanics and milestones in output to avoid overwhelming the generator (top 5 each)
+- Truncated long text fields (setting, difficulty curve) to keep prompt focused
+
+### PROBLEMS FOR NEXT TASKS
+- Task 11 will add /Map integration hints to GDD output
+- Task 12 will do final testing and documentation
+
+### VERIFICATION RESULTS
+- Ran: `python -m pytest tests/test_cli.py -v` → 41 tests passed (10 new game-generator tests)
+- Ran: `python -m pytest tests/ -v` → 215 tests passed total (no regressions)
+- Ran: `python -m ruff check main.py tests/test_cli.py` → All checks passed!
+- Manual test: `python main.py plan "space shooter" --mock --format game-generator -q` → Valid prompt output
+
+### LEARNINGS
+- game-generator input format: Simple text prompt like "Create this game: {description}"
+- game-generator uses AI (Claude/OpenAI) to generate single HTML file with embedded CSS/JS
+- game-generator project location: C:\Users\hdy86\game-generator (Next.js app)
+- CLI format option: Use `--format game-generator` (with hyphen, not underscore)
+- Prompt structure: GAMEPLAY, KEY MECHANICS, VISUAL STYLE, UNIQUE FEATURES, REQUIREMENTS sections
+
+Time taken: ~15 minutes

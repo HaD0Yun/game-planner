@@ -62,6 +62,7 @@ class OutputFormat(str, Enum):
 
     JSON = "json"
     MARKDOWN = "markdown"
+    GAME_GENERATOR = "game-generator"
 
 
 class Provider(str, Enum):
@@ -220,6 +221,78 @@ def gdd_to_markdown(gdd: GameDesignDocument) -> str:
     lines.append("")
     lines.append(f"*Generated: {gdd.generated_at}*")
     lines.append(f"*Schema Version: {gdd.schema_version}*")
+
+    return "\n".join(lines)
+
+
+def gdd_to_game_generator_prompt(gdd: GameDesignDocument) -> str:
+    """
+    Convert a GDD to a game-generator compatible prompt.
+
+    This format is designed to work with the game-generator project
+    which expects a text prompt describing the game to create.
+    The prompt is optimized for generating playable HTML5 browser games.
+    """
+    lines = []
+
+    # Title and core concept
+    lines.append(f"Create a browser game called '{gdd.meta.title}'.")
+    lines.append("")
+
+    # Genre description
+    genres = ", ".join(g.value for g in gdd.meta.genres)
+    lines.append(f"Genre: {genres}")
+    lines.append("")
+
+    # Elevator pitch if available
+    if gdd.meta.elevator_pitch:
+        lines.append(f"Concept: {gdd.meta.elevator_pitch}")
+        lines.append("")
+
+    # Core gameplay loop
+    lines.append("GAMEPLAY:")
+    lines.append(f"- Primary actions: {', '.join(gdd.core_loop.primary_actions)}")
+    lines.append(f"- Challenge: {gdd.core_loop.challenge_description}")
+    lines.append(f"- Rewards: {gdd.core_loop.reward_description}")
+    lines.append(f"- Session length: ~{gdd.core_loop.session_length_minutes} minutes")
+    lines.append("")
+
+    # Key game mechanics from systems
+    lines.append("KEY MECHANICS:")
+    for system in gdd.systems[:5]:  # Top 5 systems by priority
+        mechanics_str = ", ".join(system.mechanics[:5])  # Top 5 mechanics per system
+        lines.append(f"- {system.name}: {mechanics_str}")
+    lines.append("")
+
+    # Win/lose conditions from progression
+    lines.append("PROGRESSION:")
+    lines.append(f"- Type: {gdd.progression.type.value}")
+    lines.append(
+        f"- Difficulty curve: {gdd.progression.difficulty_curve_description[:200]}"
+    )
+    if gdd.progression.milestones:
+        milestone_names = [m.name for m in gdd.progression.milestones[:3]]
+        lines.append(f"- Key milestones: {', '.join(milestone_names)}")
+    lines.append("")
+
+    # Visual style
+    lines.append("VISUAL STYLE:")
+    lines.append(f"- Art style: {gdd.technical.art_style.value}")
+    if gdd.narrative.setting:
+        lines.append(f"- Setting: {gdd.narrative.setting[:150]}")
+    lines.append("")
+
+    # Unique selling point
+    lines.append("UNIQUE FEATURES:")
+    lines.append(f"- {gdd.meta.unique_selling_point}")
+    lines.append("")
+
+    # Technical requirements for browser game
+    lines.append("REQUIREMENTS:")
+    lines.append("- Must be a single HTML file with embedded CSS and JavaScript")
+    lines.append("- Include score tracking and game over state")
+    lines.append("- Add restart functionality")
+    lines.append("- Show clear controls/instructions to the player")
 
     return "\n".join(lines)
 
@@ -406,6 +479,8 @@ def plan(
         # Format output
         if format == OutputFormat.MARKDOWN:
             content = gdd_to_markdown(result.final_gdd)
+        elif format == OutputFormat.GAME_GENERATOR:
+            content = gdd_to_game_generator_prompt(result.final_gdd)
         else:
             content = result.final_gdd.to_json(indent=2)
 

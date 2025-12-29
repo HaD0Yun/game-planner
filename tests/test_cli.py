@@ -19,7 +19,7 @@ from typing import Generator
 import pytest
 from typer.testing import CliRunner
 
-from main import app, gdd_to_markdown, OutputFormat
+from main import app, gdd_to_markdown, gdd_to_game_generator_prompt, OutputFormat
 from models import (
     GameDesignDocument,
     GameMeta,
@@ -339,6 +339,35 @@ class TestPlanCommand:
         assert result.exit_code == 0
         assert output_file.exists()
 
+    def test_plan_with_game_generator_format(
+        self, cli_runner: CliRunner, temp_dir: Path
+    ) -> None:
+        """Test plan command with game-generator output format."""
+        output_file = temp_dir / "game_prompt.txt"
+        result = cli_runner.invoke(
+            app,
+            [
+                "plan",
+                "space shooter arcade game",
+                "--mock",
+                "--format",
+                "game-generator",
+                "--output",
+                str(output_file),
+                "--no-preview",
+            ],
+        )
+
+        assert result.exit_code == 0, f"CLI failed: {result.stdout}"
+        assert output_file.exists(), "Output file was not created"
+
+        content = output_file.read_text(encoding="utf-8")
+        # Should contain game-generator prompt elements
+        assert "Create a browser game" in content
+        assert "GAMEPLAY:" in content
+        assert "KEY MECHANICS:" in content
+        assert "REQUIREMENTS:" in content
+
 
 # =============================================================================
 # VALIDATE COMMAND TESTS
@@ -474,12 +503,90 @@ class TestOutputFormat:
         """Test Markdown format value."""
         assert OutputFormat.MARKDOWN.value == "markdown"
 
+    def test_game_generator_format_value(self) -> None:
+        """Test game-generator format value."""
+        assert OutputFormat.GAME_GENERATOR.value == "game-generator"
+
     def test_format_enum_members(self) -> None:
         """Test all format enum members exist."""
         formats = list(OutputFormat)
-        assert len(formats) == 2
+        assert len(formats) == 3
         assert OutputFormat.JSON in formats
         assert OutputFormat.MARKDOWN in formats
+        assert OutputFormat.GAME_GENERATOR in formats
+
+
+# =============================================================================
+# GDD TO GAME-GENERATOR PROMPT CONVERSION TESTS
+# =============================================================================
+
+
+class TestGddToGameGeneratorPrompt:
+    """Tests for GDD to game-generator prompt conversion."""
+
+    def test_prompt_contains_title(self, sample_gdd: GameDesignDocument) -> None:
+        """Test game-generator prompt contains game title."""
+        prompt = gdd_to_game_generator_prompt(sample_gdd)
+        assert sample_gdd.meta.title in prompt
+
+    def test_prompt_contains_genres(self, sample_gdd: GameDesignDocument) -> None:
+        """Test game-generator prompt contains genres."""
+        prompt = gdd_to_game_generator_prompt(sample_gdd)
+        for genre in sample_gdd.meta.genres:
+            assert genre.value in prompt
+
+    def test_prompt_contains_gameplay_section(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test game-generator prompt contains gameplay section."""
+        prompt = gdd_to_game_generator_prompt(sample_gdd)
+        assert "GAMEPLAY:" in prompt
+        assert "Primary actions:" in prompt
+        assert "Challenge:" in prompt
+        assert "Rewards:" in prompt
+
+    def test_prompt_contains_mechanics(self, sample_gdd: GameDesignDocument) -> None:
+        """Test game-generator prompt contains key mechanics."""
+        prompt = gdd_to_game_generator_prompt(sample_gdd)
+        assert "KEY MECHANICS:" in prompt
+        # Should contain at least one system name
+        assert any(system.name in prompt for system in sample_gdd.systems)
+
+    def test_prompt_contains_visual_style(self, sample_gdd: GameDesignDocument) -> None:
+        """Test game-generator prompt contains visual style."""
+        prompt = gdd_to_game_generator_prompt(sample_gdd)
+        assert "VISUAL STYLE:" in prompt
+        assert sample_gdd.technical.art_style.value in prompt
+
+    def test_prompt_contains_unique_features(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test game-generator prompt contains unique features."""
+        prompt = gdd_to_game_generator_prompt(sample_gdd)
+        assert "UNIQUE FEATURES:" in prompt
+        assert sample_gdd.meta.unique_selling_point in prompt
+
+    def test_prompt_contains_requirements(self, sample_gdd: GameDesignDocument) -> None:
+        """Test game-generator prompt contains browser game requirements."""
+        prompt = gdd_to_game_generator_prompt(sample_gdd)
+        assert "REQUIREMENTS:" in prompt
+        assert "HTML" in prompt
+        assert "score" in prompt.lower()
+        assert "restart" in prompt.lower()
+
+    def test_prompt_contains_elevator_pitch_when_present(
+        self, sample_gdd: GameDesignDocument
+    ) -> None:
+        """Test game-generator prompt contains elevator pitch when present."""
+        prompt = gdd_to_game_generator_prompt(sample_gdd)
+        if sample_gdd.meta.elevator_pitch:
+            assert sample_gdd.meta.elevator_pitch in prompt
+
+    def test_prompt_is_non_empty_string(self, sample_gdd: GameDesignDocument) -> None:
+        """Test game-generator prompt is a non-empty string."""
+        prompt = gdd_to_game_generator_prompt(sample_gdd)
+        assert isinstance(prompt, str)
+        assert len(prompt) > 100  # Should be a substantial prompt
 
 
 # =============================================================================
