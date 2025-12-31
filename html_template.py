@@ -17,6 +17,11 @@ from __future__ import annotations
 import html
 
 from models import GameDesignDocument
+from task_details import (
+    generate_task_details_html,
+    generate_sidebar_checklist_with_links,
+    generate_smooth_scroll_js,
+)
 
 # Module-level constants
 CORE_LOOP_COLORS = ["#e94560", "#00d9ff", "#06d6a0", "#ef8354"]
@@ -763,6 +768,397 @@ def _generate_css() -> str:
             width: 12px;
             height: 12px;
             border-radius: 50%;
+        }
+        
+        /* ============================================
+           Sidebar and Task Detail Styles
+           ============================================ */
+        
+        /* Layout wrapper for sidebar */
+        .layout-wrapper {
+            display: flex;
+            position: relative;
+        }
+        
+        .document-area {
+            flex: 1;
+            max-width: calc(100% - 320px);
+            transition: max-width 0.3s ease;
+        }
+        
+        .document-area.full-width {
+            max-width: 100%;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            right: 0;
+            top: 70px;
+            width: 300px;
+            height: calc(100vh - 70px);
+            background: var(--bg-secondary);
+            border-left: 2px solid var(--accent);
+            overflow-y: auto;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar.collapsed {
+            transform: translateX(100%);
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--accent-secondary) 100%);
+            border-bottom: 1px solid var(--accent);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        
+        .sidebar-header h3 {
+            font-size: 1.1rem;
+            color: var(--neon-blue);
+            margin-bottom: 10px;
+        }
+        
+        .progress-mini {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .progress-bar-mini {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill-mini {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+            transition: width 0.3s ease;
+        }
+        
+        .sidebar-content {
+            padding: 15px;
+        }
+        
+        .phase-group {
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin-bottom: 10px;
+        }
+        
+        .phase-group summary {
+            padding: 10px 15px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .checklist-items {
+            padding-left: 10px;
+        }
+        
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            transition: background 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .checklist-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .checklist-item.completed {
+            opacity: 0.6;
+        }
+        
+        .checklist-item.completed .task-link {
+            text-decoration: line-through;
+        }
+        
+        .checklist-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--neon-green);
+            cursor: pointer;
+        }
+        
+        .task-link {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s ease;
+        }
+        
+        .task-link:hover {
+            color: var(--neon-blue);
+        }
+        
+        .sidebar-toggle {
+            position: fixed;
+            right: 300px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px 0 0 8px;
+            cursor: pointer;
+            z-index: 101;
+            font-size: 0.85rem;
+            transition: right 0.3s ease;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+        
+        .sidebar-toggle.collapsed {
+            right: 0;
+        }
+        
+        .sidebar-toggle:hover {
+            background: var(--neon-blue);
+        }
+        
+        /* Task Detail Cards */
+        .task-detail {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .task-detail:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.1);
+        }
+        
+        .task-detail.highlight {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 30px rgba(6, 214, 160, 0.3);
+            animation: pulse-highlight 2s ease-out;
+        }
+        
+        @keyframes pulse-highlight {
+            0% { box-shadow: 0 0 30px rgba(6, 214, 160, 0.5); }
+            100% { box-shadow: 0 0 20px rgba(0, 217, 255, 0.1); }
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .task-header h4 {
+            font-size: 1.3rem;
+            color: var(--neon-blue);
+        }
+        
+        .task-estimate {
+            background: var(--accent);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .task-overview, .task-requirements, .task-parameters, 
+        .task-code, .task-tests, .task-dependencies {
+            margin-bottom: 20px;
+        }
+        
+        .task-detail h5 {
+            color: var(--neon-green);
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .param-table th, .param-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .param-table th {
+            background: var(--accent-secondary);
+            color: var(--neon-blue);
+            font-weight: 600;
+        }
+        
+        .param-table code {
+            background: var(--bg-primary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--neon-orange);
+        }
+        
+        .task-code pre {
+            background: var(--bg-primary);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .task-code code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+        
+        .task-dependencies a {
+            color: var(--neon-blue);
+            text-decoration: none;
+        }
+        
+        .task-dependencies a:hover {
+            text-decoration: underline;
+        }
+        
+        .phase-detail-section {
+            margin-bottom: 40px;
+        }
+        
+        .phase-detail-section h3 {
+            color: var(--accent);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent);
+        }
+        
+        /* ============================================
+           Sub-task Checkbox Styles
+           ============================================ */
+        
+        .requirement-checklist {
+            margin: 1rem 0;
+        }
+        
+        .req-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            border-radius: 6px;
+            margin: 2px 0;
+            transition: background 0.2s ease;
+        }
+        
+        .req-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .req-item:last-child {
+            border-bottom: none;
+        }
+        
+        .sub-task-cb {
+            width: 18px;
+            height: 18px;
+            min-width: 18px;
+            margin-right: 12px;
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: var(--neon-green);
+        }
+        
+        .req-item span {
+            flex: 1;
+            line-height: 1.5;
+        }
+        
+        .req-item:has(.sub-task-cb:checked) span {
+            text-decoration: line-through;
+            opacity: 0.6;
+            color: var(--neon-green);
+        }
+        
+        .req-item:has(.sub-task-cb:checked) {
+            background: rgba(6, 214, 160, 0.1);
+        }
+        
+        /* Progress indicators */
+        .task-progress {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+        
+        .task-progress.complete {
+            color: var(--neon-green);
+            font-weight: 600;
+        }
+        
+        .req-progress {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-left: 8px;
+        }
+        
+        .req-progress.complete {
+            color: var(--neon-green);
+            font-weight: 600;
+        }
+        
+        /* Disabled parent checkbox in sidebar */
+        .checklist-item .task-cb:disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+        }
+        
+        .checklist-item .task-cb:disabled:checked {
+            opacity: 1;
+        }
+        
+        /* Responsive sidebar */
+        @media (max-width: 1200px) {
+            .sidebar {
+                transform: translateX(100%);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .sidebar-toggle {
+                right: 0;
+            }
+            
+            .sidebar-toggle.open {
+                right: 300px;
+            }
+            
+            .document-area {
+                max-width: 100%;
+            }
         }
 """
 
@@ -1698,6 +2094,106 @@ def gdd_to_html(gdd: GameDesignDocument) -> str:
     map_hints = _generate_map_hints_section(gdd)
     footer = _generate_footer(gdd)
 
+    # Generate task details and sidebar (from task_details module)
+    task_details = generate_task_details_html()
+    sidebar = generate_sidebar_checklist_with_links()
+    smooth_scroll_js = generate_smooth_scroll_js()
+
+    # Tab switching CSS
+    tab_css = """
+        /* Tab Navigation */
+        .tab-container {
+            display: flex;
+            gap: 4px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 20px auto;
+            max-width: 500px;
+            padding: 4px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 14px 24px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .tab-btn:hover:not(.active) {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+        }
+        .tab-btn.active {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 2px 8px rgba(233, 69, 96, 0.4);
+        }
+        .tab-btn .tab-icon {
+            font-size: 1.2rem;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Content area adjustments */
+        .content-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+    """
+
+    # Tab switching JavaScript
+    tab_js = """
+    <script>
+        // Check localStorage availability
+        function isLocalStorageAvailable() {
+            try {
+                const test = '__storage_test__';
+                localStorage.setItem(test, test);
+                localStorage.removeItem(test);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+        
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            // Deactivate all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            // Show selected tab content
+            document.getElementById('tab-' + tabName).classList.add('active');
+            // Activate selected tab button
+            document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
+            // Save preference
+            if (isLocalStorageAvailable()) {
+                localStorage.setItem('pivot-protocol-active-tab', tabName);
+            }
+        }
+        // Load saved tab preference
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTab = isLocalStorageAvailable() ? (localStorage.getItem('pivot-protocol-active-tab') || 'planning') : 'planning';
+            switchTab(savedTab);
+        });
+    </script>
+    """
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1706,6 +2202,7 @@ def gdd_to_html(gdd: GameDesignDocument) -> str:
     <title>{title} - Game Design Document</title>
     <style>
         {css}
+        {tab_css}
     </style>
     <!-- Mermaid.js for diagrams -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
@@ -1742,19 +2239,57 @@ def gdd_to_html(gdd: GameDesignDocument) -> str:
 <body>
     {hero}
     {nav}
-    <!-- Main Content -->
-    <main class="container">
-        {meta}
-        {core_loop}
-        {systems}
-        {progression}
-        {narrative}
-        {characters}
-        {technical}
-        {risks}
-        {map_hints}
-    </main>
+    
+    <!-- Tab Navigation -->
+    <div class="tab-container">
+        <button class="tab-btn active" data-tab="planning" onclick="switchTab('planning')">
+            <span class="tab-icon">📋</span> 기획문서
+        </button>
+        <button class="tab-btn" data-tab="development" onclick="switchTab('development')">
+            <span class="tab-icon">💻</span> 개발문서
+        </button>
+    </div>
+    
+    <!-- Layout wrapper for sidebar -->
+    <div class="layout-wrapper">
+        <!-- Main Content -->
+        <div class="document-area">
+            <div class="content-wrapper">
+                <!-- 기획문서 Tab -->
+                <div id="tab-planning" class="tab-content active">
+                    <main class="container">
+                        {meta}
+                        {core_loop}
+                        {systems}
+                        {progression}
+                        {narrative}
+                        {characters}
+                        {technical}
+                        {risks}
+                        {map_hints}
+                    </main>
+                </div>
+                
+                <!-- 개발문서 Tab -->
+                <div id="tab-development" class="tab-content">
+                    <main class="container">
+                        {task_details}
+                    </main>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar with clickable checklist -->
+        {sidebar}
+    </div>
+    
     {footer}
+    
+    <!-- Tab switching script -->
+    {tab_js}
+    
+    <!-- Smooth scroll and sidebar functionality -->
+    {smooth_scroll_js}
 </body>
 </html>
 """
