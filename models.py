@@ -974,6 +974,109 @@ class MapGenerationHints(BaseModel):
 
 
 # =============================================================================
+# DEVELOPMENT TASKS - Dynamic checklist based on game systems
+# =============================================================================
+
+
+class TaskRequirement(BaseModel):
+    """A single requirement/sub-task within a development task."""
+
+    description: str = Field(
+        ...,
+        min_length=5,
+        max_length=300,
+        description="What needs to be implemented",
+        examples=[
+            "Implement player movement with WASD keys",
+            "Add jump mechanics with variable height",
+        ],
+    )
+    estimated_hours: Optional[float] = Field(
+        default=None,
+        ge=0.5,
+        le=100,
+        description="Estimated hours to complete this requirement",
+    )
+
+
+class DevelopmentTask(BaseModel):
+    """
+    A development task for implementing a game feature.
+    Generated dynamically based on the game's systems.
+    """
+
+    id: str = Field(
+        ...,
+        description="Unique task identifier (e.g., 'p1-task1', 'p2-task3')",
+        examples=["p1-task1", "p2-task3", "p3-task2"],
+    )
+    phase: int = Field(
+        ...,
+        ge=1,
+        le=10,
+        description="Development phase number (1-10)",
+    )
+    phase_name: str = Field(
+        ...,
+        min_length=3,
+        max_length=100,
+        description="Name of the development phase",
+        examples=[
+            "Core Mechanics",
+            "System Implementation",
+            "Content Creation",
+            "Polish",
+        ],
+    )
+    name: str = Field(
+        ...,
+        min_length=3,
+        max_length=100,
+        description="Task name",
+        examples=[
+            "Implement Combat System",
+            "Create Player Controller",
+            "Design UI Layout",
+        ],
+    )
+    description: str = Field(
+        ...,
+        min_length=10,
+        max_length=500,
+        description="Detailed description of what needs to be implemented",
+    )
+    related_system: Optional[str] = Field(
+        default=None,
+        max_length=100,
+        description="Which game system this task relates to (from systems list)",
+    )
+    requirements: List[TaskRequirement] = Field(
+        ...,
+        min_length=1,
+        max_length=10,
+        description="Specific implementation requirements (sub-tasks)",
+    )
+    priority: int = Field(
+        default=5,
+        ge=1,
+        le=10,
+        description="Implementation priority (1=highest, 10=lowest)",
+    )
+    estimated_hours: Optional[float] = Field(
+        default=None,
+        ge=1,
+        le=500,
+        description="Total estimated hours for this task",
+    )
+    dependencies: List[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="Task IDs this task depends on",
+        examples=[["p1-task1", "p1-task2"]],
+    )
+
+
+# =============================================================================
 # RISK ASSESSMENT - Potential implementation risks
 # =============================================================================
 
@@ -1075,6 +1178,11 @@ class GameDesignDocument(BaseModel):
         default_factory=list,
         max_length=20,
         description="Identified risks and mitigations",
+    )
+    development_tasks: List[DevelopmentTask] = Field(
+        default_factory=list,
+        max_length=50,
+        description="Development tasks generated based on game systems (for checklist)",
     )
     additional_notes: Optional[str] = Field(
         default=None,

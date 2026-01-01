@@ -1,0 +1,527 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "title": "Two As One",
+    "subtitle": "하나의 몸, 두 개의 마음",
+    "genres": ["action", "platformer", "puzzle"],
+    "target_platforms": ["pc"],
+    "target_audience": "협동 게임을 즐기는 친구/커플 게이머. 도전적인 난이도를 선호하며, 함께 성취감을 느끼고 싶은 플레이어. 15-35세.",
+    "age_rating": "everyone",
+    "unique_selling_point": "한 캐릭터를 두 명이 분업하여 조작하는 '2인 3각' 메카닉. 키보드는 이동, 마우스는 조준/방향 - 완벽한 호흡이 필요한 새로운 형태의 협동 게임.",
+    "estimated_dev_time_weeks": 24,
+    "team_size_estimate": 4,
+    "elevator_pitch": "한 몸을 둘이 조종한다. 너는 다리, 나는 눈. 점프하는 순간 쏴! 호흡이 맞지 않으면 추락, 맞으면 신들린 플레이. It Takes Two의 협동 + Only Up의 긴장감이 만난 새로운 장르.",
+    "art_style": "stylized"
+  },
+  "core_loop": {
+    "primary_actions": ["move_forward", "move_backward", "jump", "aim", "shoot", "coordinate"],
+    "challenge_description": "두 플레이어가 각자의 조작 영역만 담당하면서 완벽한 타이밍에 협동해야 함. Player A(키보드)는 앞뒤/점프만 가능하고, Player B(마우스)는 시야/조준/발사를 담당. 점프 중 정확한 타이밍에 사격해야 다음 발판으로 이동 가능한 구간이 핵심 챌린지.",
+    "reward_description": "구간 클리어 시 체크포인트 도달. 완벽한 협동 시 '퍼펙트 싱크' 보너스 점수. 스테이지 클리어 시 새로운 스테이지와 메카닉 해금.",
+    "core_loop_description": "1. B가 마우스로 진행 방향 지정 → 2. A가 키보드로 전진/점프 → 3. 장애물 구간에서 A의 점프 + B의 사격 동시 실행 → 4. 성공 시 진행, 실패 시 체크포인트에서 재시작 → 5. 스테이지 끝 도달 시 클리어",
+    "session_length_minutes": 30,
+    "feedback_mechanisms": [
+      {
+        "trigger": "두 입력이 완벽한 타이밍에 들어옴",
+        "response": "화면에 'SYNC!' 이펙트, 사운드 피드백, 슬로우모션 연출",
+        "purpose": "성공적인 협동에 대한 즉각적 보상감"
+      },
+      {
+        "trigger": "플레이어 추락 또는 사망",
+        "response": "코믹한 사망 애니메이션, 빠른 리스폰",
+        "purpose": "실패의 좌절감 최소화, 재시도 유도"
+      },
+      {
+        "trigger": "한 명만 입력하고 다른 한 명이 대기",
+        "response": "캐릭터가 혼란스러워하는 애니메이션",
+        "purpose": "소통 필요성 강조, 유머러스한 분위기"
+      }
+    ],
+    "hook_elements": [
+      "점점 복잡해지는 협동 퍼즐",
+      "친구와의 케미 테스트",
+      "스피드런 가능한 설계",
+      "소셜 미디어 공유 가능한 '폭소' 실패 장면"
+    ]
+  },
+  "systems": [
+    {
+      "name": "분할 조작 시스템 (Split Control System)",
+      "type": "movement",
+      "description": "핵심 메카닉. 한 캐릭터의 조작권을 두 명에게 분할 배분. Player A(키보드): W(전진), S(후진), Space(점프). Player B(마우스): 마우스 이동으로 카메라/조준 방향 제어, 좌클릭으로 발사. 좌우 이동은 의도적으로 제거하여 B의 방향 지정이 필수적으로 작용하도록 설계.",
+      "mechanics": [
+        "캐릭터는 항상 마우스가 가리키는 방향을 바라봄",
+        "전진(W)은 '바라보는 방향'으로 이동",
+        "후진(S)은 '바라보는 방향의 반대'로 이동",
+        "좌우 이동 불가 - 방향 전환은 오직 마우스로만",
+        "점프 높이/거리는 고정값"
+      ],
+      "parameters": [
+        {"name": "move_speed", "type": "float", "default_value": "5.0", "description": "초당 이동 속도 (units/sec)", "range": "3.0-8.0"},
+        {"name": "jump_force", "type": "float", "default_value": "10.0", "description": "점프 힘", "range": "8.0-15.0"},
+        {"name": "mouse_sensitivity", "type": "float", "default_value": "1.0", "description": "마우스 감도", "range": "0.5-2.0"},
+        {"name": "camera_follow_speed", "type": "float", "default_value": "0.1", "description": "카메라 따라가기 보간 속도", "range": "0.05-0.3"}
+      ],
+      "dependencies": [],
+      "priority": 1
+    },
+    {
+      "name": "사격 시스템 (Shooting System)",
+      "type": "combat",
+      "description": "Player B가 조준하고 발사하는 시스템. 단순한 전투가 아닌 '이동 보조' 역할. 특정 타겟을 맞추면 발판이 생성되거나, 반동으로 공중에서 방향 전환 가능. 점프 + 사격의 타이밍 조합이 핵심 퍼즐 요소.",
+      "mechanics": [
+        "좌클릭으로 발사",
+        "탄창 제한 없음 (무한 탄약)",
+        "사격 시 약간의 반동 발생 (공중에서 방향 조절 가능)",
+        "특수 타겟 오브젝트 파괴 시 발판/문 활성화",
+        "일부 구간은 점프 최고점에서 사격해야만 타겟 도달 가능"
+      ],
+      "parameters": [
+        {"name": "fire_rate", "type": "float", "default_value": "0.2", "description": "발사 간격 (초)", "range": "0.1-0.5"},
+        {"name": "recoil_force", "type": "float", "default_value": "2.0", "description": "사격 반동 힘", "range": "0.0-5.0"},
+        {"name": "bullet_speed", "type": "float", "default_value": "50.0", "description": "탄환 속도", "range": "30.0-100.0"},
+        {"name": "aim_assist", "type": "float", "default_value": "0.0", "description": "조준 보조 정도 (0=없음)", "range": "0.0-1.0"}
+      ],
+      "dependencies": ["분할 조작 시스템"],
+      "priority": 2
+    },
+    {
+      "name": "동기화 판정 시스템 (Sync Judgment System)",
+      "type": "custom",
+      "description": "두 플레이어의 입력 타이밍을 판정하고 시각적 피드백을 제공하는 시스템. 특정 구간에서 점프와 사격이 동시에(또는 정해진 순서로) 입력되어야 성공 판정.",
+      "mechanics": [
+        "타이밍 윈도우: Perfect(±50ms), Good(±150ms), OK(±300ms)",
+        "Perfect 달성 시 슬로우모션 + 이펙트",
+        "연속 Perfect 시 콤보 카운터 증가",
+        "타이밍 실패 시에도 물리적으로는 작동 (완벽하지 않으면 떨어질 뿐)"
+      ],
+      "parameters": [
+        {"name": "perfect_window_ms", "type": "int", "default_value": "50", "description": "퍼펙트 판정 윈도우 (밀리초)", "range": "30-100"},
+        {"name": "good_window_ms", "type": "int", "default_value": "150", "description": "굿 판정 윈도우 (밀리초)", "range": "100-200"},
+        {"name": "slowmo_duration", "type": "float", "default_value": "0.5", "description": "퍼펙트 시 슬로우모션 지속 시간", "range": "0.3-1.0"},
+        {"name": "slowmo_timescale", "type": "float", "default_value": "0.3", "description": "슬로우모션 시간 배율", "range": "0.1-0.5"}
+      ],
+      "dependencies": ["분할 조작 시스템", "사격 시스템"],
+      "priority": 3
+    },
+    {
+      "name": "레벨 진행 시스템 (Level Progression System)",
+      "type": "leveling",
+      "description": "Only Up 스타일의 수직 상승 + 횡스크롤 혼합 레벨 구조. 추락 시 아래 체크포인트로 복귀. 스테이지는 테마별로 구분되며, 각 스테이지마다 새로운 메카닉이 추가됨.",
+      "mechanics": [
+        "체크포인트 자동 저장",
+        "추락 시 가장 최근 체크포인트에서 즉시 리스폰",
+        "스테이지 클리어 시 다음 스테이지 해금",
+        "각 스테이지 최고 기록(시간, 사망 횟수) 저장",
+        "스피드런 모드: 체크포인트 없이 처음부터 끝까지"
+      ],
+      "parameters": [
+        {"name": "respawn_delay", "type": "float", "default_value": "0.5", "description": "리스폰 딜레이 (초)", "range": "0.0-2.0"},
+        {"name": "checkpoint_distance", "type": "float", "default_value": "100.0", "description": "체크포인트 간 평균 거리", "range": "50.0-200.0"},
+        {"name": "fall_death_height", "type": "float", "default_value": "30.0", "description": "추락사 판정 높이", "range": "20.0-50.0"}
+      ],
+      "dependencies": [],
+      "priority": 4
+    },
+    {
+      "name": "환경 상호작용 시스템 (Environment Interaction System)",
+      "type": "physics",
+      "description": "사격으로 활성화되는 발판, 스위치, 도르래 등 환경 오브젝트. 두 플레이어가 동시에 역할을 수행해야 통과 가능한 구간 설계.",
+      "mechanics": [
+        "타겟 오브젝트: 맞추면 발판 생성 (시간 제한)",
+        "스위치: 맞추면 문/장벽 열림",
+        "도르래: 캐릭터가 올라서면 이동, 사격으로 속도 조절",
+        "회전 발판: 사격 반동으로 회전, 타이밍 맞춰 착지",
+        "바운스 패드: 점프 강화, 사격 방향으로 튕겨나감"
+      ],
+      "parameters": [
+        {"name": "platform_active_duration", "type": "float", "default_value": "3.0", "description": "사격 발판 지속 시간 (초)", "range": "2.0-10.0"},
+        {"name": "switch_toggle_time", "type": "float", "default_value": "0.5", "description": "스위치 반응 시간 (초)", "range": "0.0-1.0"}
+      ],
+      "dependencies": ["사격 시스템"],
+      "priority": 5
+    },
+    {
+      "name": "음성 채팅 / 핑 시스템 (Communication System)",
+      "type": "ui",
+      "description": "같은 화면을 보는 로컬 협동을 기본으로 하지만, 온라인 플레이 시 내장 음성 채팅 및 핑 시스템 제공.",
+      "mechanics": [
+        "Push-to-talk 음성 채팅 (V키)",
+        "마우스 휠 클릭으로 화면에 핑 표시",
+        "'Ready' 신호 (R키) - 두 명 다 Ready 시 카운트다운 후 시작",
+        "간단한 이모티콘 휠 (Tab키)"
+      ],
+      "parameters": [
+        {"name": "ping_duration", "type": "float", "default_value": "3.0", "description": "핑 표시 지속 시간", "range": "2.0-5.0"},
+        {"name": "ready_countdown", "type": "float", "default_value": "3.0", "description": "Ready 후 카운트다운", "range": "1.0-5.0"}
+      ],
+      "dependencies": [],
+      "priority": 6
+    }
+  ],
+  "progression": {
+    "type": "level_based",
+    "milestones": [
+      {
+        "name": "First Steps Together",
+        "description": "튜토리얼 완료 - 기본 조작법 숙달",
+        "unlock_condition": "튜토리얼 스테이지 클리어",
+        "rewards": ["스테이지 1 해금", "기본 캐릭터 스킨"],
+        "estimated_hours": 0.5
+      },
+      {
+        "name": "Learning to Sync",
+        "description": "첫 번째 '점프+사격' 협동 구간 클리어",
+        "unlock_condition": "스테이지 1 클리어",
+        "rewards": ["스테이지 2 해금", "'Rookie Duo' 칭호"],
+        "estimated_hours": 1.0
+      },
+      {
+        "name": "Rising Together",
+        "description": "수직 상승 스테이지 정복",
+        "unlock_condition": "스테이지 3 클리어",
+        "rewards": ["스테이지 4 해금", "새 캐릭터 스킨 '등산가'"],
+        "estimated_hours": 2.0
+      },
+      {
+        "name": "Perfect Harmony",
+        "description": "한 스테이지에서 Perfect Sync 10회 달성",
+        "unlock_condition": "단일 스테이지 Perfect 10회",
+        "rewards": ["'Synchronized' 칭호", "특수 이펙트 스킨"],
+        "estimated_hours": 3.0
+      },
+      {
+        "name": "No Fall Zone",
+        "description": "한 스테이지를 추락 없이 클리어",
+        "unlock_condition": "스테이지 5 노데스 클리어",
+        "rewards": ["'Flawless' 칭호", "스피드런 모드 해금"],
+        "estimated_hours": 4.0
+      },
+      {
+        "name": "The Summit",
+        "description": "모든 스테이지 클리어",
+        "unlock_condition": "최종 스테이지 클리어",
+        "rewards": ["엔딩 크레딧", "'Two As One' 마스터 칭호", "뉴게임+ 모드"],
+        "estimated_hours": 6.0
+      },
+      {
+        "name": "Speed Demons",
+        "description": "전체 스피드런 30분 이내 완료",
+        "unlock_condition": "전체 클리어 30분 미만",
+        "rewards": ["'Lightning Duo' 칭호", "골드 스킨"],
+        "estimated_hours": 8.0
+      }
+    ],
+    "difficulty_levels": [
+      {
+        "name": "Casual",
+        "description": "타이밍 윈도우 2배, 체크포인트 2배 많음",
+        "modifiers": {"perfect_window_ms": "100", "checkpoint_distance": "50.0"}
+      },
+      {
+        "name": "Normal",
+        "description": "기본 난이도",
+        "modifiers": {}
+      },
+      {
+        "name": "Hardcore",
+        "description": "타이밍 윈도우 절반, 체크포인트 절반",
+        "modifiers": {"perfect_window_ms": "25", "checkpoint_distance": "200.0"}
+      },
+      {
+        "name": "Insane",
+        "description": "한 번 추락하면 처음부터",
+        "modifiers": {"checkpoint_distance": "99999.0"}
+      }
+    ],
+    "difficulty_curve_description": "스테이지 1-2: 기본 조작 학습. 스테이지 3-5: 점프+사격 조합 도입. 스테이지 6-8: 복합 환경 퍼즐. 스테이지 9-10: 마스터 레벨 - 모든 메카닉 종합. 추락해도 좌절감이 적도록 체크포인트 간격 조절. 실패 시 코믹한 애니메이션으로 분위기 가볍게 유지.",
+    "estimated_completion_hours": 6
+  },
+  "narrative": {
+    "setting": "초현실적인 공간을 배경으로 한 추상적 세계. 하늘 위에 떠 있는 구조물들, 중력을 무시하는 건축물, 파스텔 톤의 몽환적 배경. 실체가 불분명한 '위'를 향해 올라가는 두 영혼의 여정.",
+    "story_premise": "두 영혼이 하나의 몸에 깃들었다. '분리'를 꿈꾸며 높은 곳을 향해 올라가지만, 여정 속에서 깨닫게 된다 - 함께일 때 더 강하다는 것을. 정상에 도달한 순간, 분리 대신 영원한 '하나'를 선택한다.",
+    "themes": ["협동의 가치", "소통의 중요성", "다름 속의 조화", "함께하는 성장"],
+    "characters": [
+      {
+        "name": "The Body (하나)",
+        "role": "Protagonist",
+        "description": "두 영혼이 깃든 하나의 몸. 양쪽 눈이 서로 다른 색. 혼란스러워 보이지만 두 영혼이 조화를 이룰 때 빛난다.",
+        "motivation": "높은 곳에 도달하여 자신의 정체성을 찾고 싶음",
+        "abilities": ["이동", "점프", "사격"]
+      },
+      {
+        "name": "Soul A (발)",
+        "role": "Companion",
+        "description": "키보드를 조작하는 플레이어의 아바타. 몸의 '다리' 역할. 성급하고 행동력이 넘침.",
+        "motivation": "앞으로 나아가고 싶음, 하지만 방향을 모름",
+        "abilities": ["전진", "후진", "점프"]
+      },
+      {
+        "name": "Soul B (눈)",
+        "role": "Companion",
+        "description": "마우스를 조작하는 플레이어의 아바타. 몸의 '눈과 팔' 역할. 신중하고 분석적.",
+        "motivation": "정확한 방향을 제시하고 싶음, 하지만 스스로 움직일 수 없음",
+        "abilities": ["조준", "방향 지정", "사격"]
+      }
+    ],
+    "narrative_delivery": ["environmental", "emergent"],
+    "story_structure": "최소한의 명시적 스토리. 배경과 환경을 통해 암시적으로 전달. 스테이지마다 배경의 분위기가 변하며 감정적 여정을 표현. 시작: 혼란과 불협화음 → 중반: 협력의 즐거움 → 끝: 하나됨의 완성.",
+    "key_story_beats": [
+      "두 영혼의 첫 만남 (튜토리얼 - 서로를 이해하는 과정)",
+      "첫 번째 '완벽한 싱크' 순간 (협동의 쾌감 체험)",
+      "큰 추락 후 재도전 (좌절과 극복)",
+      "정상 도달 (목표 달성, 하지만 새로운 선택 앞에)",
+      "함께 남기로 결정 (엔딩)"
+    ],
+    "world_lore": "이 세계는 '분리'를 원하는 영혼들이 모이는 곳. 높이 올라갈수록 분리에 가까워진다고 믿어짐. 하지만 역사상 정상에 도달한 어떤 '둘'도 분리를 선택하지 않았다. 왜냐하면 정상에서 그들은 깨달았기 때문 - 여정 자체가 목적이었고, 함께했기에 여기까지 올 수 있었다는 것을."
+  },
+  "technical": {
+    "recommended_engine": "unity",
+    "art_style": "stylized",
+    "key_technologies": [
+      "Unity 2022 LTS",
+      "Cinemachine (카메라 시스템)",
+      "Input System (분할 조작)",
+      "Netcode for GameObjects (온라인 협동)",
+      "DOTween (타이밍 이펙트)",
+      "Shader Graph (시각 이펙트)"
+    ],
+    "performance_targets": [
+      {
+        "platform": "pc",
+        "target_fps": 60,
+        "min_resolution": "1920x1080",
+        "max_ram_mb": 4096
+      }
+    ],
+    "audio": {
+      "music_style": "일렉트로닉/앰비언트 혼합. 긴장감 있지만 희망적인 톤. 완벽한 싱크 시 음악이 일시적으로 고조됨.",
+      "sound_categories": ["UI", "Movement", "Shooting", "Sync_Feedback", "Ambient", "Death_Respawn"],
+      "voice_acting": false,
+      "adaptive_music": true
+    },
+    "asset_requirements": [
+      "캐릭터 모델 (양면 색상 눈)",
+      "스테이지 모듈러 에셋 (발판, 타겟, 스위치 등)",
+      "파티클 이펙트 (싱크, 발사, 추락)",
+      "UI 에셋 (타이밍 인디케이터, 핑, 이모티콘)",
+      "사운드 이펙트 50개+",
+      "배경음악 10트랙+"
+    ],
+    "networking_required": true,
+    "accessibility_features": [
+      "조작 키 리바인딩",
+      "마우스 감도 조절",
+      "색맹 모드 (타이밍 피드백 색상 변경)",
+      "자막 지원 (환경 내러티브)"
+    ],
+    "localization_languages": ["ko", "en", "ja", "zh-CN"]
+  },
+  "monetization": {
+    "model": "premium",
+    "price_usd": 14.99,
+    "strategies": [
+      "기본 게임 판매 (스팀, 에픽)",
+      "DLC: 추가 스테이지 팩",
+      "코스메틱 캐릭터 스킨 (유료)",
+      "사운드트랙 별도 판매"
+    ]
+  },
+  "risks": [
+    {
+      "description": "같은 키보드/마우스를 두 명이 사용하는 것이 물리적으로 불편할 수 있음",
+      "severity": "critical",
+      "mitigation": "온라인 협동 모드 우선 개발. 로컬 플레이 시 컨트롤러 + 키마 분리 옵션 제공."
+    },
+    {
+      "description": "협동 파트너를 찾기 어려울 수 있음 (솔로 플레이 불가)",
+      "severity": "major",
+      "mitigation": "온라인 매치메이킹 기능 추가. '연습 모드'에서 AI 파트너 제공 (완전한 게임 경험은 아님)."
+    },
+    {
+      "description": "난이도 밸런싱이 까다로움 - 너무 쉽거나 너무 어려울 수 있음",
+      "severity": "major",
+      "mitigation": "다양한 난이도 옵션. 체크포인트 간격 동적 조절 (사망 횟수 기반). 베타 테스트 충분히 진행."
+    },
+    {
+      "description": "반복적인 실패가 파트너 간 갈등을 유발할 수 있음",
+      "severity": "minor",
+      "mitigation": "사망 시 누구 잘못인지 명시하지 않음. 코믹한 사망 연출로 분위기 가볍게. '책임 전가 금지' 로딩 팁."
+    }
+  ],
+  "references": {
+    "games": [
+      {
+        "title": "It Takes Two",
+        "relevance": "협동 메카닉, 두 플레이어의 서로 다른 능력, 감정적 스토리텔링"
+      },
+      {
+        "title": "Only Up!",
+        "relevance": "수직 상승 플랫포밍, 추락의 긴장감, 체크포인트 시스템"
+      },
+      {
+        "title": "토리의 모험 (Tori's Adventure)",
+        "relevance": "캐주얼 플랫포밍, 접근성 좋은 난이도"
+      },
+      {
+        "title": "A Way Out",
+        "relevance": "분할 화면 협동, 항상 함께 플레이해야 하는 구조"
+      },
+      {
+        "title": "Getting Over It",
+        "relevance": "실패와 재도전의 미학, 좌절과 성취"
+      }
+    ],
+    "other": [
+      "2인 3각 달리기 - 물리적 협동의 개념적 기반"
+    ]
+  },
+  "development_tasks": [
+    {
+      "id": "p1-task1",
+      "phase": 1,
+      "phase_name": "Core Mechanics",
+      "name": "분할 조작 시스템 구현",
+      "description": "키보드(WASD/Space)와 마우스 입력을 분리하여 하나의 캐릭터에 적용하는 핵심 메카닉 개발",
+      "related_system": "분할 조작 시스템",
+      "requirements": [
+        {"description": "Input System 설정 - 키보드/마우스 분리", "estimated_hours": 4},
+        {"description": "캐릭터 이동 로직 (W/S = 바라보는 방향 기준)", "estimated_hours": 6},
+        {"description": "마우스 기반 카메라/방향 제어", "estimated_hours": 8},
+        {"description": "점프 메카닉 구현", "estimated_hours": 4}
+      ],
+      "priority": 1,
+      "estimated_hours": 22,
+      "dependencies": []
+    },
+    {
+      "id": "p1-task2",
+      "phase": 1,
+      "phase_name": "Core Mechanics",
+      "name": "사격 시스템 구현",
+      "description": "마우스 좌클릭으로 조준 방향에 발사하는 시스템 개발",
+      "related_system": "사격 시스템",
+      "requirements": [
+        {"description": "발사체 생성 및 물리", "estimated_hours": 4},
+        {"description": "사격 반동 구현 (공중 방향 전환)", "estimated_hours": 6},
+        {"description": "타겟 오브젝트 피격 판정", "estimated_hours": 4}
+      ],
+      "priority": 2,
+      "estimated_hours": 14,
+      "dependencies": ["p1-task1"]
+    },
+    {
+      "id": "p2-task1",
+      "phase": 2,
+      "phase_name": "Primary Systems",
+      "name": "동기화 판정 시스템 구현",
+      "description": "두 플레이어의 입력 타이밍을 판정하고 피드백을 제공하는 시스템",
+      "related_system": "동기화 판정 시스템",
+      "requirements": [
+        {"description": "입력 타이밍 기록 및 비교 로직", "estimated_hours": 8},
+        {"description": "Perfect/Good/OK 판정 UI", "estimated_hours": 4},
+        {"description": "슬로우모션 이펙트", "estimated_hours": 4},
+        {"description": "콤보 카운터 시스템", "estimated_hours": 3}
+      ],
+      "priority": 3,
+      "estimated_hours": 19,
+      "dependencies": ["p1-task1", "p1-task2"]
+    },
+    {
+      "id": "p2-task2",
+      "phase": 2,
+      "phase_name": "Primary Systems",
+      "name": "레벨 진행 시스템 구현",
+      "description": "체크포인트, 리스폰, 스테이지 전환 시스템",
+      "related_system": "레벨 진행 시스템",
+      "requirements": [
+        {"description": "체크포인트 저장/로드", "estimated_hours": 4},
+        {"description": "추락 감지 및 리스폰", "estimated_hours": 3},
+        {"description": "스테이지 클리어 판정", "estimated_hours": 2},
+        {"description": "스테이지 선택 UI", "estimated_hours": 4}
+      ],
+      "priority": 4,
+      "estimated_hours": 13,
+      "dependencies": ["p1-task1"]
+    },
+    {
+      "id": "p3-task1",
+      "phase": 3,
+      "phase_name": "Secondary Systems",
+      "name": "환경 상호작용 오브젝트 구현",
+      "description": "발판, 스위치, 도르래 등 인터랙션 오브젝트 시스템",
+      "related_system": "환경 상호작용 시스템",
+      "requirements": [
+        {"description": "타겟 오브젝트 (발판 생성)", "estimated_hours": 6},
+        {"description": "스위치/문 시스템", "estimated_hours": 4},
+        {"description": "도르래/이동 발판", "estimated_hours": 6},
+        {"description": "바운스 패드", "estimated_hours": 3}
+      ],
+      "priority": 5,
+      "estimated_hours": 19,
+      "dependencies": ["p1-task2"]
+    },
+    {
+      "id": "p3-task2",
+      "phase": 3,
+      "phase_name": "Secondary Systems",
+      "name": "온라인 멀티플레이어 구현",
+      "description": "Netcode를 활용한 온라인 협동 모드 개발",
+      "related_system": "분할 조작 시스템",
+      "requirements": [
+        {"description": "네트워크 입력 동기화", "estimated_hours": 16},
+        {"description": "매치메이킹 시스템", "estimated_hours": 8},
+        {"description": "음성 채팅 통합", "estimated_hours": 6},
+        {"description": "지연 보상 처리", "estimated_hours": 8}
+      ],
+      "priority": 6,
+      "estimated_hours": 38,
+      "dependencies": ["p1-task1", "p2-task1"]
+    },
+    {
+      "id": "p4-task1",
+      "phase": 4,
+      "phase_name": "Content & Polish",
+      "name": "스테이지 레벨 디자인",
+      "description": "10개 스테이지의 레벨 디자인 및 제작",
+      "related_system": "레벨 진행 시스템",
+      "requirements": [
+        {"description": "튜토리얼 스테이지 디자인", "estimated_hours": 8},
+        {"description": "초급 스테이지 3개 제작", "estimated_hours": 18},
+        {"description": "중급 스테이지 3개 제작", "estimated_hours": 24},
+        {"description": "고급 스테이지 3개 제작", "estimated_hours": 30}
+      ],
+      "priority": 7,
+      "estimated_hours": 80,
+      "dependencies": ["p2-task2", "p3-task1"]
+    },
+    {
+      "id": "p4-task2",
+      "phase": 4,
+      "phase_name": "Content & Polish",
+      "name": "오디오 및 VFX 폴리싱",
+      "description": "사운드 효과, 음악, 파티클 이펙트 완성",
+      "related_system": "동기화 판정 시스템",
+      "requirements": [
+        {"description": "사운드 효과 제작/적용", "estimated_hours": 16},
+        {"description": "배경음악 작곡/적용", "estimated_hours": 20},
+        {"description": "파티클 이펙트 제작", "estimated_hours": 12},
+        {"description": "어댑티브 뮤직 시스템", "estimated_hours": 8}
+      ],
+      "priority": 8,
+      "estimated_hours": 56,
+      "dependencies": ["p2-task1"]
+    }
+  ],
+  "map_hints": {
+    "biomes": ["urban", "ruins", "space"],
+    "map_size": "large",
+    "connectivity": "medium",
+    "generation_style": "handcrafted",
+    "special_features": [
+      "vertical_climb_sections",
+      "floating_platforms",
+      "checkpoint_zones",
+      "target_shoot_areas"
+    ]
+  }
+}

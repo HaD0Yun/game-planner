@@ -178,6 +178,25 @@ Your output must be a valid JSON object matching the GameDesignDocument schema:
       "likelihood": "<low|medium|high>"
     }
   ],
+  "development_tasks": [  // IMPORTANT: Generate tasks based on your designed systems
+    {
+      "id": "<Unique ID: p{phase}-task{n}>",  // e.g., "p1-task1", "p2-task3"
+      "phase": <1-10>,  // Development phase number
+      "phase_name": "<Phase name>",  // e.g., "Core Mechanics", "System Implementation"
+      "name": "<Task name>",
+      "description": "<What needs to be implemented, 10-500 chars>",
+      "related_system": "<Name of related system from 'systems' array>",
+      "requirements": [  // 1-10 specific implementation requirements
+        {
+          "description": "<Specific sub-task to implement>",
+          "estimated_hours": <0.5-100>
+        }
+      ],
+      "priority": <1-10>,  // 1 = highest
+      "estimated_hours": <1-500>,
+      "dependencies": ["<task_id>", ...]  // Task IDs this depends on
+    }
+  ],
   "additional_notes": "<Optional additional notes, max 5000 chars>"
 }
 ```
@@ -278,6 +297,44 @@ When creating a GDD, systematically work through:
 - What are the technical challenges?
 - What are the design risks?
 - How can risks be mitigated?
+
+### Step 8: Development Task Planning (CRITICAL)
+Generate development tasks based on YOUR DESIGNED SYSTEMS. Each system should have corresponding tasks.
+
+**Phase Structure (Recommended):**
+- Phase 1: Core Mechanics (Movement, Basic Actions)
+- Phase 2: Primary Systems (Combat, Inventory, etc.)
+- Phase 3: Secondary Systems (Economy, Crafting, etc.)
+- Phase 4: Content & Polish (Levels, UI, Audio)
+
+**Task Generation Rules:**
+1. Create 1-3 tasks PER SYSTEM you designed
+2. Each task should have 3-6 specific requirements (sub-tasks)
+3. Link tasks to their related system using `related_system` field
+4. Set realistic priorities and time estimates
+5. Identify task dependencies (e.g., "Combat System" depends on "Movement System")
+
+**Example for a Combat System:**
+```json
+{
+  "id": "p2-task1",
+  "phase": 2,
+  "phase_name": "Primary Systems",
+  "name": "Implement Combat System",
+  "description": "Build the core combat mechanics including attacks, damage, and hit detection",
+  "related_system": "Combat System",
+  "requirements": [
+    {"description": "Implement basic attack input handling", "estimated_hours": 4},
+    {"description": "Create damage calculation system", "estimated_hours": 6},
+    {"description": "Add hit detection with collision system", "estimated_hours": 8},
+    {"description": "Implement enemy AI reactions to damage", "estimated_hours": 6},
+    {"description": "Add visual feedback (hit effects, damage numbers)", "estimated_hours": 4}
+  ],
+  "priority": 2,
+  "estimated_hours": 28,
+  "dependencies": ["p1-task1"]
+}
+```
 
 """
     + GDD_SCHEMA_REFERENCE
@@ -642,6 +699,11 @@ Ensure your response:
 4. Has at least 5 progression milestones
 5. Has a clear and differentiated USP
 6. Is internally consistent across all sections
+7. **CRITICAL: Has development_tasks generated based on your designed systems**
+   - Create 1-3 tasks per system
+   - Each task should have 3-6 specific requirements
+   - Organize tasks into phases (Core Mechanics → Systems → Content → Polish)
+   - Link tasks to their related systems
 
 Respond ONLY with the JSON GDD."""
 

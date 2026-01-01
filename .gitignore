@@ -13,3 +13,9 @@ htmlcov/
 
 # Windows artifacts
 nul
+
+# Temp/backup files
+*_restored.py
+test_output.json
+gdd-pivot-protocol-v2.html
+gdd-pivot-protocol.json

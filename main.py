@@ -32,6 +32,7 @@ from models import GameDesignDocument, RefinementResult
 from orchestrator import GamePlanningOrchestrator, OrchestratorConfig
 from llm_provider import create_provider
 from html_template import gdd_to_html
+from input_validator import InputValidator, ValidationResult
 
 # Fix encoding issues on Windows (CP949 can't handle Rich's Unicode spinners)
 if sys.platform == "win32":
@@ -583,6 +584,17 @@ def plan(
         "--preview/--no-preview",
         help="Show GDD preview after generation",
     ),
+    skip_validation: bool = typer.Option(
+        False,
+        "--skip-validation",
+        "-s",
+        help="Skip input validation and proceed directly to GDD generation",
+    ),
+    interactive: bool = typer.Option(
+        True,
+        "--interactive/--no-interactive",
+        help="Enable interactive mode to ask follow-up questions",
+    ),
 ) -> None:
     """
     Generate a Game Design Document from a game concept.
@@ -590,24 +602,90 @@ def plan(
     Uses the Dual-Agent Actor-Critic architecture to generate and refine
     comprehensive game design documents.
 
+    If the provided concept lacks sufficient detail, the system will ask
+    follow-up questions to gather more information before generating the GDD.
+
     Examples:
         python -m game_planner.main plan "zombie roguelike" --mock
         python -m game_planner.main plan "cozy farming sim" --provider anthropic
         python -m game_planner.main plan "space explorer" -o gdd.md -f markdown
+        python -m game_planner.main plan "게임" --interactive  # 추가 질문 모드
     """
     # Handle mock shortcut
     provider_type = provider.value
     if mock:
         provider_type = "mock"
 
+    # ==========================================================================
+    # 입력 검증 및 추가 질문
+    # ==========================================================================
+    final_prompt = prompt
+
+    if not skip_validation:
+        validator = InputValidator()
+        validation_result = validator.validate(prompt)
+
+        if not validation_result.is_sufficient:
+            if not quiet:
+                # 감지된 정보 표시
+                if validation_result.detected_info:
+                    detected_str = ", ".join(
+                        f"{k.value}: {v}"
+                        for k, v in validation_result.detected_info.items()
+                    )
+                    console.print(f"\n[dim]감지된 정보: {detected_str}[/dim]")
+
+                # 추가 질문 표시
+                console.print()
+                console.print(
+                    Panel(
+                        validation_result.get_follow_up_prompt(),
+                        title="⚠️ 추가 정보 필요",
+                        border_style="yellow",
+                    )
+                )
+
+            if interactive and not quiet:
+                # 대화형 모드: 추가 질문에 대한 답변 수집
+                console.print()
+                additional_info = {}
+
+                for i, question in enumerate(validation_result.questions, 1):
+                    answer = typer.prompt(f"[{i}] {question}", default="")
+                    if answer.strip():
+                        additional_info[f"Q{i}"] = answer
+
+                if additional_info:
+                    # 프롬프트 보강
+                    final_prompt = validator.enhance_prompt(prompt, additional_info)
+                    console.print()
+                    console.print(
+                        Panel(
+                            final_prompt,
+                            title="보강된 게임 컨셉",
+                            border_style="green",
+                        )
+                    )
+            else:
+                # 비대화형 모드: 경고만 표시하고 진행
+                if not quiet:
+                    console.print()
+                    console.print(
+                        "[yellow]정보가 부족하지만 진행합니다. 더 나은 결과를 위해 --interactive 옵션을 사용하세요.[/yellow]"
+                    )
+
     if not quiet:
         console.print()
+        # Build panel content
+        panel_content = (
+            f"[bold]Concept:[/bold] {final_prompt}\n"
+            f"[bold]Provider:[/bold] {provider_type}\n"
+            f"[bold]Format:[/bold] {format.value}\n"
+            f"[bold]Output:[/bold] {output or 'stdout'}"
+        )
         console.print(
             Panel(
-                f"[bold]Concept:[/bold] {prompt}\n"
-                f"[bold]Provider:[/bold] {provider_type}\n"
-                f"[bold]Format:[/bold] {format.value}\n"
-                f"[bold]Output:[/bold] {output or 'stdout'}",
+                panel_content,
                 title="Game Planner - Dual-Agent GDD Generator",
                 border_style="cyan",
             )
@@ -617,7 +695,7 @@ def plan(
         # Run async generation
         result = asyncio.run(
             _generate_with_progress(
-                prompt=prompt,
+                prompt=final_prompt,
                 provider_type=provider_type,
                 max_iterations=max_iterations,
                 quiet=quiet,

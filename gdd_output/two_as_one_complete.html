@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two As One - 게임 기획서</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --accent: #e94560;
+            --accent-secondary: #0f3460;
+            --text-primary: #eee;
+            --text-secondary: #aaa;
+            --success: #4ecca3;
+            --warning: #ffc107;
+            --danger: #e94560;
+            --sidebar-width: 420px;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .main-content {
+            flex: 1;
+            transition: margin-right 0.3s ease;
+        }
+        
+        .main-content.sidebar-open {
+            margin-right: var(--sidebar-width);
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--accent-secondary));
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 3px solid var(--accent);
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header .subtitle { color: var(--text-secondary); font-size: 1.3rem; }
+        .header .pitch { 
+            max-width: 800px; 
+            margin: 20px auto 0; 
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+        
+        /* Tabs */
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--accent-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .tab-btn {
+            padding: 15px 40px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-btn:hover { color: var(--text-primary); }
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            background: rgba(233, 69, 96, 0.1);
+        }
+        
+        /* Content */
+        .content { max-width: 1200px; margin: 0 auto; padding: 30px 20px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Sidebar Toggle Handle */
+        .sidebar-toggle {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 200;
+            background: var(--accent);
+            border: none;
+            padding: 20px 8px;
+            cursor: pointer;
+            border-radius: 8px 0 0 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-toggle:hover {
+            padding-right: 15px;
+            background: var(--danger);
+        }
+        
+        .sidebar-toggle.open {
+            right: var(--sidebar-width);
+        }
+        
+        .sidebar-toggle .label {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: white;
+        }
+        
+        .sidebar-toggle .arrow {
+            font-size: 1rem;
+            color: white;
+            transition: transform 0.3s;
+        }
+        
+        .sidebar-toggle.open .arrow {
+            transform: rotate(180deg);
+        }
+        
+        /* Sidebar Panel */
+        .sidebar-panel {
+            position: fixed;
+            right: calc(-1 * var(--sidebar-width));
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--bg-secondary);
+            border-left: 3px solid var(--accent);
+            z-index: 150;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.5);
+        }
+        
+        .sidebar-panel.open {
+            right: 0;
+        }
+        
+        .sidebar-header {
+            background: var(--accent);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 1.3rem;
+            color: white;
+        }
+        
+        .sidebar-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+        }
+        
+        .sidebar-close:hover {
+            opacity: 0.8;
+        }
+        
+        /* Sidebar Content */
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        /* Progress in Sidebar */
+        .sidebar-progress {
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .sidebar-progress .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .sidebar-progress .progress-bar {
+            height: 10px;
+            background: var(--bg-primary);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .sidebar-progress .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), #4ecca3aa);
+            border-radius: 5px;
+            transition: width 0.3s;
+        }
+        
+        .sidebar-progress .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .sidebar-progress .stats strong {
+            color: var(--text-primary);
+        }
+        
+        /* Checklist in Sidebar */
+        .checklist-phase {
+            margin-bottom: 15px;
+        }
+        
+        .phase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--accent-secondary);
+            padding: 10px 12px;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+        }
+        
+        .phase-header:hover {
+            background: #0f3460cc;
+        }
+        
+        .phase-header h3 { 
+            margin: 0; 
+            font-size: 0.9rem;
+        }
+        
+        .phase-hours {
+            background: var(--bg-primary);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+        
+        .phase-toggle {
+            color: var(--text-secondary);
+            transition: transform 0.2s;
+        }
+        
+        .checklist-phase.collapsed .phase-toggle {
+            transform: rotate(-90deg);
+        }
+        
+        .checklist-items {
+            background: var(--bg-card);
+            border-radius: 0 0 6px 6px;
+            overflow: hidden;
+        }
+        
+        .checklist-phase.collapsed .checklist-items {
+            display: none;
+        }
+        
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .checklist-item:hover { background: rgba(255,255,255,0.02); }
+        .checklist-item:last-child { border-bottom: none; }
+        
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--text-secondary);
+            border-radius: 4px;
+            margin-right: 10px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .checklist-item.checked .checkbox {
+            background: var(--success);
+            border-color: var(--success);
+        }
+        
+        .checklist-item.checked .checkbox::after {
+            content: "✓";
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .checklist-item.checked .task-name {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .task-content { flex: 1; }
+        .task-name { font-weight: bold; font-size: 0.85rem; margin-bottom: 3px; }
+        .task-desc { color: var(--text-secondary); font-size: 0.75rem; display: none; }
+        
+        .task-meta {
+            display: flex;
+            gap: 8px;
+            margin-top: 5px;
+            font-size: 0.75rem;
+        }
+        
+        .task-meta span {
+            color: var(--text-secondary);
+        }
+        
+        .priority-badge {
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: bold;
+        }
+        
+        .priority-1 { background: var(--danger); }
+        .priority-2 { background: #e67e22; }
+        .priority-3 { background: var(--warning); color: #000; }
+        .priority-4, .priority-5 { background: var(--accent-secondary); }
+        
+        /* Sub-requirements */
+        .sub-requirements {
+            margin-top: 8px;
+            padding: 8px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .checklist-item.expanded .sub-requirements { display: block; }
+        .checklist-item.expanded .task-desc { display: block; margin-bottom: 8px; }
+        
+        .sub-req {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.8rem;
+        }
+        
+        .sub-req:last-child { border-bottom: none; }
+        
+        .sub-checkbox {
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--text-secondary);
+            border-radius: 3px;
+            margin-right: 8px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .sub-req.checked .sub-checkbox {
+            background: var(--success);
+            border-color: var(--success);
+        }
+        
+        .sub-req.checked .sub-checkbox::after {
+            content: "✓";
+            color: white;
+            font-size: 0.6rem;
+        }
+        
+        .sub-hours {
+            margin-left: auto;
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .card h2 {
+            color: var(--accent);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--accent-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card h3 {
+            color: var(--text-primary);
+            margin: 20px 0 10px;
+        }
+        
+        /* Grid */
+        .grid { display: grid; gap: 20px; }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+        
+        /* Meta Info */
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .meta-item {
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .meta-item .label { color: var(--text-secondary); font-size: 0.85rem; }
+        .meta-item .value { font-size: 1.2rem; font-weight: bold; margin-top: 5px; }
+        
+        /* Tags */
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .tag {
+            background: var(--accent-secondary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        .tag.genre { background: var(--accent); }
+        
+        /* Core Loop Diagram */
+        .loop-diagram {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+        
+        .loop-step {
+            background: var(--accent-secondary);
+            padding: 15px 20px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 120px;
+            position: relative;
+        }
+        
+        .loop-step::after {
+            content: "→";
+            position: absolute;
+            right: -18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent);
+            font-size: 1.3rem;
+        }
+        
+        .loop-step:last-child::after { content: ""; }
+        
+        /* Control Split Diagram */
+        .control-split {
+            display: grid;
+            grid-template-columns: 1fr 80px 1fr;
+            gap: 15px;
+            align-items: center;
+            padding: 25px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+        }
+        
+        .player-control {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .player-control h4 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+        }
+        
+        .player-control.keyboard { border: 2px solid #4ecca3; }
+        .player-control.keyboard h4 { color: #4ecca3; }
+        .player-control.mouse { border: 2px solid #ffc107; }
+        .player-control.mouse h4 { color: #ffc107; }
+        
+        .control-keys {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .key {
+            background: var(--bg-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+        
+        .character-center {
+            text-align: center;
+            font-size: 2.5rem;
+        }
+        
+        /* Character Cards */
+        .character-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .character-avatar {
+            width: 70px;
+            height: 70px;
+            background: var(--accent-secondary);
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+        
+        .character-card h4 { color: var(--accent); margin-bottom: 5px; }
+        .character-card .role { color: var(--text-secondary); font-size: 0.9rem; }
+        .character-card p { margin-top: 10px; font-size: 0.9rem; }
+        
+        /* System Cards */
+        .system-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid var(--accent);
+            margin-bottom: 20px;
+        }
+        
+        .system-card h4 {
+            color: var(--accent);
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .system-type {
+            background: var(--accent-secondary);
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+        
+        .system-card > p { color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem; }
+        
+        .mechanics-list {
+            list-style: none;
+            margin-top: 15px;
+        }
+        
+        .mechanics-list li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.9rem;
+        }
+        
+        .mechanics-list li::before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+        
+        /* Parameters Table */
+        .params-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.85rem;
+        }
+        
+        .params-table th, .params-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .params-table th {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            font-weight: normal;
+        }
+        
+        .params-table code {
+            background: var(--bg-primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        
+        /* Dependencies */
+        .dependencies {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .dep-badge {
+            display: inline-block;
+            background: var(--accent-secondary);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-right: 5px;
+        }
+        
+        /* Milestones */
+        .milestone {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .milestone-hours {
+            background: var(--accent-secondary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 60px;
+        }
+        
+        .milestone-hours .num { font-size: 1.2rem; font-weight: bold; }
+        .milestone-hours .label { font-size: 0.7rem; color: var(--text-secondary); }
+        
+        .milestone-content h4 { color: var(--accent); margin-bottom: 5px; font-size: 0.95rem; }
+        .milestone-content p { color: var(--text-secondary); font-size: 0.85rem; }
+        
+        .milestone-rewards { margin-top: 8px; }
+        
+        .reward-tag {
+            display: inline-block;
+            background: var(--bg-primary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin: 2px 2px 0 0;
+        }
+        
+        /* Risk Cards */
+        .risk-card {
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .risk-card.critical { border-left-color: var(--danger); }
+        .risk-card.major { border-left-color: var(--warning); }
+        .risk-card.minor { border-left-color: var(--success); }
+        
+        .risk-severity {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .risk-card.critical .risk-severity { background: var(--danger); }
+        .risk-card.major .risk-severity { background: var(--warning); color: #000; }
+        .risk-card.minor .risk-severity { background: var(--success); }
+        
+        .risk-card h4 { margin-bottom: 8px; font-size: 0.95rem; }
+        .risk-card > p { font-size: 0.85rem; }
+        .risk-card .mitigation {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.85rem;
+        }
+        
+        .risk-card .mitigation strong { color: var(--success); }
+        
+        /* References */
+        .reference-card {
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .reference-card h4 { color: var(--accent); margin-bottom: 8px; font-size: 0.95rem; }
+        .reference-card p { color: var(--text-secondary); font-size: 0.8rem; }
+        
+        /* Tech Stack */
+        .tech-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .tech-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--accent-secondary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 900px) {
+            :root {
+                --sidebar-width: 350px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .tab-btn { padding: 10px 20px; font-size: 0.9rem; }
+            .control-split { grid-template-columns: 1fr; }
+            .character-center { display: none; }
+            
+            :root {
+                --sidebar-width: 100%;
+            }
+            
+            .sidebar-toggle {
+                top: auto;
+                bottom: 20px;
+                right: 20px;
+                transform: none;
+                border-radius: 8px;
+                padding: 12px;
+            }
+            
+            .sidebar-toggle .label {
+                writing-mode: horizontal-tb;
+            }
+            
+            .sidebar-toggle.open {
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main Content -->
+        <div class="main-content" id="mainContent">
+            <header class="header">
+                <h1>Two As One</h1>
+                <p class="subtitle">하나의 몸, 두 개의 마음</p>
+                <p class="pitch">"한 몸을 둘이 조종한다. 너는 다리, 나는 눈. 점프하는 순간 쏴! 호흡이 맞지 않으면 추락, 맞으면 신들린 플레이."</p>
+            </header>
+            
+            <nav class="tab-container">
+                <button class="tab-btn active" data-tab="general">일반 기획서</button>
+                <button class="tab-btn" data-tab="system">시스템 기획서</button>
+            </nav>
+            
+            <main class="content">
+                <!-- ==================== 일반 기획서 ==================== -->
+                <div id="general" class="tab-content active">
+                    <!-- 기본 정보 -->
+                    <div class="card">
+                        <h2>🎮 게임 개요</h2>
+                        <div class="meta-grid">
+                            <div class="meta-item">
+                                <div class="label">개발 기간</div>
+                                <div class="value">24주</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="label">예상 팀원</div>
+                                <div class="value">4명</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="label">타겟 플랫폼</div>
+                                <div class="value">PC (Steam)</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="label">예상 가격</div>
+                                <div class="value">$14.99</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="label">이용 등급</div>
+                                <div class="value">전체 이용가</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="label">플레이 시간</div>
+                                <div class="value">~6시간</div>
+                            </div>
+                        </div>
+                        
+                        <div class="tags" style="margin-top: 20px;">
+                            <span class="tag genre">Action</span>
+                            <span class="tag genre">Platformer</span>
+                            <span class="tag genre">Puzzle</span>
+                            <span class="tag">협동 필수</span>
+                            <span class="tag">2인 플레이</span>
+                            <span class="tag">스타일라이즈드</span>
+                        </div>
+                    </div>
+                    
+                    <!-- USP -->
+                    <div class="card">
+                        <h2>⭐ 핵심 차별점 (USP)</h2>
+                        <p style="font-size: 1.05rem; line-height: 1.8;">
+                            <strong>한 캐릭터를 두 명이 분업하여 조작하는 '2인 3각' 메카닉.</strong><br>
+                            키보드 플레이어는 이동과 점프만, 마우스 플레이어는 조준과 방향 설정만 담당합니다.
+                            완벽한 호흡이 필요한 새로운 형태의 협동 게임입니다.
+                        </p>
+                        
+                        <h3>타겟 유저</h3>
+                        <p style="color: var(--text-secondary); margin-top: 10px;">
+                            협동 게임을 즐기는 친구/커플 게이머. 도전적인 난이도를 선호하며, 
+                            함께 성취감을 느끼고 싶은 플레이어. 15-35세.
+                        </p>
+                    </div>
+                    
+                    <!-- 조작 분담 -->
+                    <div class="card">
+                        <h2>🎯 조작 분담 시스템</h2>
+                        <div class="control-split">
+                            <div class="player-control keyboard">
+                                <h4>⌨️ Player A (키보드)</h4>
+                                <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 0.9rem;">다리 역할 - 이동 담당</p>
+                                <div class="control-keys">
+                                    <span class="key">W</span>
+                                    <span class="key">S</span>
+                                    <span class="key">Space</span>
+                                </div>
+                                <ul style="text-align: left; margin-top: 12px; color: var(--text-secondary); font-size: 0.85rem;">
+                                    <li>W: 전진 (바라보는 방향)</li>
+                                    <li>S: 후진</li>
+                                    <li>Space: 점프</li>
+                                    <li style="color: var(--warning);">좌우 이동 불가!</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="character-center">🧍</div>
+                            
+                            <div class="player-control mouse">
+                                <h4>🖱️ Player B (마우스)</h4>
+                                <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 0.9rem;">눈 역할 - 조준 담당</p>
+                                <div class="control-keys">
+                                    <span class="key">마우스 이동</span>
+                                    <span class="key">좌클릭</span>
+                                </div>
+                                <ul style="text-align: left; margin-top: 12px; color: var(--text-secondary); font-size: 0.85rem;">
+                                    <li>마우스 이동: 카메라/방향 제어</li>
+                                    <li>좌클릭: 사격</li>
+                                    <li style="color: var(--warning);">방향만 정할 수 있음!</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 코어 루프 -->
+                    <div class="card">
+                        <h2>🔄 코어 루프</h2>
+                        <div class="loop-diagram">
+                            <div class="loop-step">1️⃣ B가 방향 지정</div>
+                            <div class="loop-step">2️⃣ A가 전진/점프</div>
+                            <div class="loop-step">3️⃣ 동시 사격 협동</div>
+                            <div class="loop-step">4️⃣ 성공/실패 판정</div>
+                            <div class="loop-step">5️⃣ 다음 구간 진행</div>
+                        </div>
+                        
+                        <h3 style="margin-top: 20px;">피드백 메카닉</h3>
+                        <div class="grid grid-3" style="margin-top: 12px;">
+                            <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
+                                <strong style="color: var(--success);">SYNC! 성공</strong>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px;">
+                                    화면에 'SYNC!' 이펙트, 슬로우모션
+                                </p>
+                            </div>
+                            <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
+                                <strong style="color: var(--danger);">추락/사망</strong>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px;">
+                                    코믹한 사망 애니메이션, 빠른 리스폰
+                                </p>
+                            </div>
+                            <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
+                                <strong style="color: var(--warning);">불협화음</strong>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px;">
+                                    캐릭터가 혼란스러워하는 애니메이션
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 캐릭터 -->
+                    <div class="card">
+                        <h2>👥 캐릭터</h2>
+                        <div class="grid grid-3">
+                            <div class="character-card">
+                                <div class="character-avatar">🧍</div>
+                                <h4>The Body (하나)</h4>
+                                <span class="role">주인공</span>
+                                <p>두 영혼이 깃든 하나의 몸. 양쪽 눈이 서로 다른 색.</p>
+                            </div>
+                            <div class="character-card">
+                                <div class="character-avatar" style="background: #4ecca3;">🦶</div>
+                                <h4>Soul A (발)</h4>
+                                <span class="role">키보드 플레이어</span>
+                                <p>몸의 '다리' 역할. 성급하고 행동력이 넘침.</p>
+                            </div>
+                            <div class="character-card">
+                                <div class="character-avatar" style="background: #ffc107;">👁️</div>
+                                <h4>Soul B (눈)</h4>
+                                <span class="role">마우스 플레이어</span>
+                                <p>몸의 '눈과 팔' 역할. 신중하고 분석적.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 스토리 -->
+                    <div class="card">
+                        <h2>📖 스토리 & 세계관</h2>
+                        
+                        <h3>배경</h3>
+                        <p style="color: var(--text-secondary);">
+                            초현실적인 공간을 배경으로 한 추상적 세계. 하늘 위에 떠 있는 구조물들, 
+                            중력을 무시하는 건축물, 파스텔 톤의 몽환적 배경.
+                        </p>
+                        
+                        <h3>스토리 전제</h3>
+                        <p style="color: var(--text-secondary);">
+                            두 영혼이 하나의 몸에 깃들었다. '분리'를 꿈꾸며 높은 곳을 향해 올라가지만, 
+                            여정 속에서 깨닫게 된다 - <strong>함께일 때 더 강하다는 것을.</strong>
+                        </p>
+                        
+                        <h3>주요 테마</h3>
+                        <div class="tags" style="margin-top: 10px;">
+                            <span class="tag">협동의 가치</span>
+                            <span class="tag">소통의 중요성</span>
+                            <span class="tag">다름 속의 조화</span>
+                            <span class="tag">함께하는 성장</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 진행 -->
+                    <div class="card">
+                        <h2>📊 진행 & 마일스톤</h2>
+                        
+                        <div class="milestones">
+                            <div class="milestone">
+                                <div class="milestone-hours">
+                                    <div class="num">0.5h</div>
+                                    <div class="label">예상</div>
+                                </div>
+                                <div class="milestone-content">
+                                    <h4>First Steps Together</h4>
+                                    <p>튜토리얼 완료 - 기본 조작법 숙달</p>
+                                    <div class="milestone-rewards">
+                                        <span class="reward-tag">스테이지 1 해금</span>
+                                        <span class="reward-tag">기본 스킨</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="milestone">
+                                <div class="milestone-hours">
+                                    <div class="num">4h</div>
+                                    <div class="label">예상</div>
+                                </div>
+                                <div class="milestone-content">
+                                    <h4>No Fall Zone</h4>
+                                    <p>한 스테이지를 추락 없이 클리어</p>
+                                    <div class="milestone-rewards">
+                                        <span class="reward-tag">'Flawless' 칭호</span>
+                                        <span class="reward-tag">스피드런 모드</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="milestone">
+                                <div class="milestone-hours">
+                                    <div class="num">6h</div>
+                                    <div class="label">예상</div>
+                                </div>
+                                <div class="milestone-content">
+                                    <h4>The Summit</h4>
+                                    <p>모든 스테이지 클리어</p>
+                                    <div class="milestone-rewards">
+                                        <span class="reward-tag">엔딩 크레딧</span>
+                                        <span class="reward-tag">뉴게임+</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 레퍼런스 -->
+                    <div class="card">
+                        <h2>🎯 레퍼런스 게임</h2>
+                        <div class="grid grid-3">
+                            <div class="reference-card">
+                                <h4>It Takes Two</h4>
+                                <p>협동 메카닉, 두 플레이어의 서로 다른 능력</p>
+                            </div>
+                            <div class="reference-card">
+                                <h4>Only Up!</h4>
+                                <p>수직 상승 플랫포밍, 추락의 긴장감</p>
+                            </div>
+                            <div class="reference-card">
+                                <h4>Getting Over It</h4>
+                                <p>실패와 재도전의 미학</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 리스크 -->
+                    <div class="card">
+                        <h2>⚠️ 리스크 분석</h2>
+                        <div class="grid grid-2">
+                            <div class="risk-card critical">
+                                <span class="risk-severity">Critical</span>
+                                <h4>물리적 조작 불편함</h4>
+                                <p>같은 키보드/마우스를 두 명이 사용하는 것이 불편할 수 있음</p>
+                                <div class="mitigation">
+                                    <strong>대응:</strong> 온라인 협동 모드 우선 개발
+                                </div>
+                            </div>
+                            
+                            <div class="risk-card major">
+                                <span class="risk-severity">Major</span>
+                                <h4>솔로 플레이 불가</h4>
+                                <p>협동 파트너를 찾기 어려울 수 있음</p>
+                                <div class="mitigation">
+                                    <strong>대응:</strong> 온라인 매치메이킹 + AI 파트너
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ==================== 시스템 기획서 ==================== -->
+                <div id="system" class="tab-content">
+                    <!-- 기술 스택 -->
+                    <div class="card">
+                        <h2>🛠️ 기술 스택</h2>
+                        <div class="grid grid-2">
+                            <div>
+                                <div class="tech-item">
+                                    <div class="tech-icon">🎮</div>
+                                    <div>
+                                        <strong>Unity 2022 LTS</strong>
+                                        <p style="color: var(--text-secondary); font-size: 0.8rem;">메인 게임 엔진</p>
+                                    </div>
+                                </div>
+                                <div class="tech-item">
+                                    <div class="tech-icon">📹</div>
+                                    <div>
+                                        <strong>Cinemachine</strong>
+                                        <p style="color: var(--text-secondary); font-size: 0.8rem;">카메라 시스템</p>
+                                    </div>
+                                </div>
+                                <div class="tech-item">
+                                    <div class="tech-icon">🎹</div>
+                                    <div>
+                                        <strong>Input System</strong>
+                                        <p style="color: var(--text-secondary); font-size: 0.8rem;">분할 조작 구현</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="tech-item">
+                                    <div class="tech-icon">🌐</div>
+                                    <div>
+                                        <strong>Netcode for GameObjects</strong>
+                                        <p style="color: var(--text-secondary); font-size: 0.8rem;">온라인 협동</p>
+                                    </div>
+                                </div>
+                                <div class="tech-item">
+                                    <div class="tech-icon">✨</div>
+                                    <div>
+                                        <strong>DOTween</strong>
+                                        <p style="color: var(--text-secondary); font-size: 0.8rem;">타이밍 이펙트</p>
+                                    </div>
+                                </div>
+                                <div class="tech-item">
+                                    <div class="tech-icon">🎨</div>
+                                    <div>
+                                        <strong>Shader Graph</strong>
+                                        <p style="color: var(--text-secondary); font-size: 0.8rem;">시각 이펙트</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 시스템 상세 -->
+                    <div class="card">
+                        <h2>⚙️ 시스템 상세</h2>
+                        
+                        <!-- 시스템 1 -->
+                        <div class="system-card">
+                            <h4>
+                                분할 조작 시스템 (Split Control System)
+                                <span class="system-type">Movement</span>
+                            </h4>
+                            <p>핵심 메카닉. 한 캐릭터의 조작권을 두 명에게 분할 배분.</p>
+                            
+                            <ul class="mechanics-list">
+                                <li>캐릭터는 항상 마우스가 가리키는 방향을 바라봄</li>
+                                <li>전진(W)은 '바라보는 방향'으로 이동</li>
+                                <li>좌우 이동 불가 - 방향 전환은 오직 마우스로만</li>
+                            </ul>
+                            
+                            <table class="params-table">
+                                <thead>
+                                    <tr><th>파라미터</th><th>타입</th><th>기본값</th><th>설명</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><code>move_speed</code></td><td>float</td><td>5.0</td><td>초당 이동 속도</td></tr>
+                                    <tr><td><code>jump_force</code></td><td>float</td><td>10.0</td><td>점프 힘</td></tr>
+                                    <tr><td><code>mouse_sensitivity</code></td><td>float</td><td>1.0</td><td>마우스 감도</td></tr>
+                                </tbody>
+                            </table>
+                            
+                            <div class="dependencies">
+                                <strong style="color: var(--text-secondary); font-size: 0.8rem;">의존성:</strong>
+                                <span style="color: var(--success);">없음 (기반 시스템)</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 시스템 2 -->
+                        <div class="system-card">
+                            <h4>
+                                사격 시스템 (Shooting System)
+                                <span class="system-type">Combat</span>
+                            </h4>
+                            <p>Player B가 조준하고 발사. '이동 보조' 역할.</p>
+                            
+                            <ul class="mechanics-list">
+                                <li>좌클릭으로 발사, 무한 탄약</li>
+                                <li>사격 시 반동으로 공중 방향 전환 가능</li>
+                                <li>타겟 파괴 시 발판/문 활성화</li>
+                            </ul>
+                            
+                            <table class="params-table">
+                                <thead>
+                                    <tr><th>파라미터</th><th>타입</th><th>기본값</th><th>설명</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><code>fire_rate</code></td><td>float</td><td>0.2</td><td>발사 간격 (초)</td></tr>
+                                    <tr><td><code>recoil_force</code></td><td>float</td><td>2.0</td><td>사격 반동 힘</td></tr>
+                                </tbody>
+                            </table>
+                            
+                            <div class="dependencies">
+                                <strong style="color: var(--text-secondary); font-size: 0.8rem;">의존성:</strong>
+                                <span class="dep-badge">분할 조작 시스템</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 시스템 3 -->
+                        <div class="system-card">
+                            <h4>
+                                동기화 판정 시스템 (Sync Judgment)
+                                <span class="system-type">Custom</span>
+                            </h4>
+                            <p>두 플레이어의 입력 타이밍을 판정하고 피드백 제공.</p>
+                            
+                            <ul class="mechanics-list">
+                                <li>Perfect(±50ms), Good(±150ms), OK(±300ms)</li>
+                                <li>Perfect 시 슬로우모션 + 이펙트</li>
+                                <li>연속 Perfect 시 콤보 카운터</li>
+                            </ul>
+                            
+                            <div class="dependencies">
+                                <strong style="color: var(--text-secondary); font-size: 0.8rem;">의존성:</strong>
+                                <span class="dep-badge">분할 조작 시스템</span>
+                                <span class="dep-badge">사격 시스템</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 시스템 4 -->
+                        <div class="system-card">
+                            <h4>
+                                레벨 진행 시스템 (Level Progression)
+                                <span class="system-type">Leveling</span>
+                            </h4>
+                            <p>Only Up 스타일의 수직 상승 + 횡스크롤 혼합.</p>
+                            
+                            <ul class="mechanics-list">
+                                <li>체크포인트 자동 저장</li>
+                                <li>추락 시 최근 체크포인트에서 리스폰</li>
+                                <li>스피드런 모드 지원</li>
+                            </ul>
+                            
+                            <div class="dependencies">
+                                <strong style="color: var(--text-secondary); font-size: 0.8rem;">의존성:</strong>
+                                <span style="color: var(--success);">없음</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+        
+        <!-- Sidebar Toggle Button -->
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <span class="arrow">◀</span>
+            <span class="label">체크리스트</span>
+        </button>
+        
+        <!-- Sidebar Panel -->
+        <aside class="sidebar-panel" id="sidebarPanel">
+            <div class="sidebar-header">
+                <h2>📋 개발 체크리스트</h2>
+                <button class="sidebar-close" id="sidebarClose">×</button>
+            </div>
+            
+            <div class="sidebar-content">
+                <!-- Progress -->
+                <div class="sidebar-progress">
+                    <div class="progress-header">
+                        <span>진행률</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="stats">
+                        <span>완료: <strong id="completed-count">0</strong>/8</span>
+                        <span>남은 시간: <strong id="remaining-hours">261</strong>h</span>
+                    </div>
+                </div>
+                
+                <!-- Phase 1 -->
+                <div class="checklist-phase" id="phase1">
+                    <div class="phase-header" onclick="togglePhase('phase1')">
+                        <h3>🎯 Phase 1: Core Mechanics</h3>
+                        <span class="phase-toggle">▼</span>
+                    </div>
+                    <div class="checklist-items">
+                        <div class="checklist-item" data-hours="22">
+                            <div class="checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-name">분할 조작 시스템 구현</div>
+                                <div class="task-desc">키보드/마우스 입력 분리하여 캐릭터에 적용</div>
+                                <div class="task-meta">
+                                    <span class="priority-badge priority-1">P1</span>
+                                    <span>22h</span>
+                                </div>
+                                <div class="sub-requirements">
+                                    <div class="sub-req" data-hours="4">
+                                        <div class="sub-checkbox"></div>
+                                        <span>Input System 설정</span>
+                                        <span class="sub-hours">4h</span>
+                                    </div>
+                                    <div class="sub-req" data-hours="6">
+                                        <div class="sub-checkbox"></div>
+                                        <span>캐릭터 이동 로직</span>
+                                        <span class="sub-hours">6h</span>
+                                    </div>
+                                    <div class="sub-req" data-hours="8">
+                                        <div class="sub-checkbox"></div>
+                                        <span>마우스 카메라 제어</span>
+                                        <span class="sub-hours">8h</span>
+                                    </div>
+                                    <div class="sub-req" data-hours="4">
+                                        <div class="sub-checkbox"></div>
+                                        <span>점프 메카닉</span>
+                                        <span class="sub-hours">4h</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item" data-hours="14">
+                            <div class="checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-name">사격 시스템 구현</div>
+                                <div class="task-desc">마우스 좌클릭으로 발사하는 시스템</div>
+                                <div class="task-meta">
+                                    <span class="priority-badge priority-2">P2</span>
+                                    <span>14h</span>
+                                </div>
+                                <div class="sub-requirements">
+                                    <div class="sub-req" data-hours="4">
+                                        <div class="sub-checkbox"></div>
+                                        <span>발사체 생성 및 물리</span>
+                                        <span class="sub-hours">4h</span>
+                                    </div>
+                                    <div class="sub-req" data-hours="6">
+                                        <div class="sub-checkbox"></div>
+                                        <span>사격 반동 구현</span>
+                                        <span class="sub-hours">6h</span>
+                                    </div>
+                                    <div class="sub-req" data-hours="4">
+                                        <div class="sub-checkbox"></div>
+                                        <span>타겟 피격 판정</span>
+                                        <span class="sub-hours">4h</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Phase 2 -->
+                <div class="checklist-phase" id="phase2">
+                    <div class="phase-header" onclick="togglePhase('phase2')">
+                        <h3>⚙️ Phase 2: Primary Systems</h3>
+                        <span class="phase-toggle">▼</span>
+                    </div>
+                    <div class="checklist-items">
+                        <div class="checklist-item" data-hours="19">
+                            <div class="checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-name">동기화 판정 시스템</div>
+                                <div class="task-desc">입력 타이밍 판정 및 피드백</div>
+                                <div class="task-meta">
+                                    <span class="priority-badge priority-3">P3</span>
+                                    <span>19h</span>
+                                </div>
+                                <div class="sub-requirements">
+                                    <div class="sub-req"><div class="sub-checkbox"></div><span>타이밍 기록/비교</span><span class="sub-hours">8h</span></div>
+                                    <div class="sub-req"><div class="sub-checkbox"></div><span>판정 UI</span><span class="sub-hours">4h</span></div>
+                                    <div class="sub-req"><div class="sub-checkbox"></div><span>슬로우모션</span><span class="sub-hours">4h</span></div>
+                                    <div class="sub-req"><div class="sub-checkbox"></div><span>콤보 카운터</span><span class="sub-hours">3h</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item" data-hours="13">
+                            <div class="checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-name">레벨 진행 시스템</div>
+                                <div class="task-desc">체크포인트, 리스폰, 스테이지 전환</div>
+                                <div class="task-meta">
+                                    <span class="priority-badge priority-4">P4</span>
+                                    <span>13h</span>
+                                </div>
+                                <div class="sub-requirements">
+                                    <div class="sub-req"><div class="sub-checkbox"></div><span>체크포인트</span><span class="sub-hours">4h</span></div>
+                                    <div class="sub-req"><div class="sub-checkbox"></div><span>추락/리스폰</span><span class="sub-hours">3h</span></div>
+                                    <div class="sub-req"><div class="sub-checkbox"></div><span>클리어 판정</span><span class="sub-hours">2h</span></div>
+                                    <div class="sub-req"><div class="sub-checkbox"></div><span>스테이지 UI</span><span class="sub-hours">4h</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Phase 3 -->
+                <div class="checklist-phase" id="phase3">
+                    <div class="phase-header" onclick="togglePhase('phase3')">
+                        <h3>🔧 Phase 3: Secondary Systems</h3>
+                        <span class="phase-toggle">▼</span>
+                    </div>
+                    <div class="checklist-items">
+                        <div class="checklist-item" data-hours="19">
+                            <div class="checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-name">환경 상호작용</div>
+                                <div class="task-desc">발판, 스위치, 도르래 등</div>
+                                <div class="task-meta">
+                                    <span class="priority-badge priority-5">P5</span>
+                                    <span>19h</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item" data-hours="38">
+                            <div class="checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-name">온라인 멀티플레이어</div>
+                                <div class="task-desc">Netcode 기반 온라인 협동</div>
+                                <div class="task-meta">
+                                    <span class="priority-badge priority-5">P6</span>
+                                    <span>38h</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Phase 4 -->
+                <div class="checklist-phase" id="phase4">
+                    <div class="phase-header" onclick="togglePhase('phase4')">
+                        <h3>✨ Phase 4: Content & Polish</h3>
+                        <span class="phase-toggle">▼</span>
+                    </div>
+                    <div class="checklist-items">
+                        <div class="checklist-item" data-hours="80">
+                            <div class="checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-name">스테이지 레벨 디자인</div>
+                                <div class="task-desc">10개 스테이지 제작</div>
+                                <div class="task-meta">
+                                    <span class="priority-badge priority-5">P7</span>
+                                    <span>80h</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item" data-hours="56">
+                            <div class="checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-name">오디오 및 VFX</div>
+                                <div class="task-desc">사운드, 음악, 파티클</div>
+                                <div class="task-meta">
+                                    <span class="priority-badge priority-5">P8</span>
+                                    <span>56h</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+    
+    <script>
+        // Sidebar Toggle
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarPanel = document.getElementById('sidebarPanel');
+        const sidebarClose = document.getElementById('sidebarClose');
+        const mainContent = document.getElementById('mainContent');
+        
+        function openSidebar() {
+            sidebarPanel.classList.add('open');
+            sidebarToggle.classList.add('open');
+            mainContent.classList.add('sidebar-open');
+        }
+        
+        function closeSidebar() {
+            sidebarPanel.classList.remove('open');
+            sidebarToggle.classList.remove('open');
+            mainContent.classList.remove('sidebar-open');
+        }
+        
+        sidebarToggle.addEventListener('click', () => {
+            if (sidebarPanel.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+        
+        sidebarClose.addEventListener('click', closeSidebar);
+        
+        // Phase Toggle
+        function togglePhase(phaseId) {
+            const phase = document.getElementById(phaseId);
+            phase.classList.toggle('collapsed');
+        }
+        
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // Checklist functionality
+        const totalHours = 261;
+        let completedHours = 0;
+        let completedTasks = 0;
+        const totalTasks = 8;
+        
+        // Load saved state
+        const savedState = JSON.parse(localStorage.getItem('twoAsOneChecklist') || '{}');
+        
+        document.querySelectorAll('.checklist-item').forEach((item, idx) => {
+            const hours = parseInt(item.dataset.hours);
+            
+            // Restore saved state
+            if (savedState[`task-${idx}`]) {
+                item.classList.add('checked');
+                completedTasks++;
+                completedHours += hours;
+            }
+            
+            // Main task click
+            item.querySelector('.checkbox').addEventListener('click', (e) => {
+                e.stopPropagation();
+                item.classList.toggle('checked');
+                
+                if (item.classList.contains('checked')) {
+                    completedTasks++;
+                    completedHours += hours;
+                    savedState[`task-${idx}`] = true;
+                    
+                    item.querySelectorAll('.sub-req').forEach(sub => {
+                        sub.classList.add('checked');
+                    });
+                } else {
+                    completedTasks--;
+                    completedHours -= hours;
+                    delete savedState[`task-${idx}`];
+                    
+                    item.querySelectorAll('.sub-req').forEach(sub => {
+                        sub.classList.remove('checked');
+                    });
+                }
+                
+                localStorage.setItem('twoAsOneChecklist', JSON.stringify(savedState));
+                updateProgress();
+            });
+            
+            // Expand/collapse
+            item.querySelector('.task-content').addEventListener('click', () => {
+                item.classList.toggle('expanded');
+            });
+            
+            // Sub-requirement clicks
+            item.querySelectorAll('.sub-req').forEach((sub) => {
+                sub.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    sub.classList.toggle('checked');
+                });
+            });
+        });
+        
+        function updateProgress() {
+            const percent = Math.round((completedTasks / totalTasks) * 100);
+            document.getElementById('progress-percent').textContent = percent + '%';
+            document.getElementById('progress-fill').style.width = percent + '%';
+            document.getElementById('completed-count').textContent = completedTasks;
+            document.getElementById('remaining-hours').textContent = totalHours - completedHours;
+        }
+        
+        updateProgress();
+    </script>
+</body>
+</html>

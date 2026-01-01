@@ -738,6 +738,91 @@ class MockLLMProvider(BaseLLMProvider):
                         "sound_categories": ["Combat", "UI"],
                     },
                 },
+                "development_tasks": [
+                    {
+                        "id": "p1-task1",
+                        "phase": 1,
+                        "phase_name": "Core Mechanics",
+                        "name": "Implement Movement System",
+                        "description": "Build the core movement mechanics including walking and running",
+                        "related_system": "Movement System",
+                        "requirements": [
+                            {
+                                "description": "Implement basic WASD movement input",
+                                "estimated_hours": 4,
+                            },
+                            {
+                                "description": "Add sprint functionality with stamina",
+                                "estimated_hours": 6,
+                            },
+                            {
+                                "description": "Implement collision detection",
+                                "estimated_hours": 4,
+                            },
+                        ],
+                        "priority": 1,
+                        "estimated_hours": 14,
+                        "dependencies": [],
+                    },
+                    {
+                        "id": "p2-task1",
+                        "phase": 2,
+                        "phase_name": "System Implementation",
+                        "name": "Implement Combat System",
+                        "description": "Build the combat mechanics with attack and defend actions",
+                        "related_system": "Combat System",
+                        "requirements": [
+                            {
+                                "description": "Implement basic attack input handling",
+                                "estimated_hours": 4,
+                            },
+                            {
+                                "description": "Create damage calculation system",
+                                "estimated_hours": 6,
+                            },
+                            {
+                                "description": "Add hit detection with collision system",
+                                "estimated_hours": 8,
+                            },
+                            {
+                                "description": "Implement defend/block mechanics",
+                                "estimated_hours": 4,
+                            },
+                        ],
+                        "priority": 2,
+                        "estimated_hours": 22,
+                        "dependencies": ["p1-task1"],
+                    },
+                    {
+                        "id": "p2-task2",
+                        "phase": 2,
+                        "phase_name": "System Implementation",
+                        "name": "Implement Inventory System",
+                        "description": "Build the inventory management system",
+                        "related_system": "Inventory System",
+                        "requirements": [
+                            {
+                                "description": "Create inventory data structure",
+                                "estimated_hours": 3,
+                            },
+                            {
+                                "description": "Implement item pickup mechanics",
+                                "estimated_hours": 4,
+                            },
+                            {
+                                "description": "Build inventory UI panel",
+                                "estimated_hours": 6,
+                            },
+                            {
+                                "description": "Add item usage functionality",
+                                "estimated_hours": 4,
+                            },
+                        ],
+                        "priority": 3,
+                        "estimated_hours": 17,
+                        "dependencies": ["p1-task1"],
+                    },
+                ],
             },
             indent=2,
         )
