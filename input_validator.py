@@ -32,6 +32,10 @@ class InfoCategory(str, Enum):
     UNIQUE_FEATURE = "unique_feature"
     TARGET_AUDIENCE = "target_audience"
     ART_STYLE = "art_style"
+    # 새로 추가된 필수 카테고리
+    VIEW_PERSPECTIVE = "view_perspective"  # 2D/3D - 필수!
+    ENGINE = "engine"  # 게임 엔진 - 필수!
+    MULTIPLAYER_TYPE = "multiplayer_type"  # 솔로/로컬협동/온라인
 
 
 @dataclass
@@ -100,12 +104,102 @@ PLATFORM_KEYWORDS = {
 
 ART_STYLE_KEYWORDS = {
     "픽셀아트": ["픽셀", "pixel", "도트", "8bit", "16bit", "레트로"],
-    "3D": ["3d", "삼차원", "폴리곤"],
-    "2D": ["2d", "이차원", "스프라이트"],
     "카툰": ["카툰", "cartoon", "만화풍", "애니"],
     "리얼리스틱": ["리얼", "realistic", "사실적", "실사"],
     "미니멀": ["미니멀", "minimal", "심플", "단순"],
     "손그림": ["손그림", "hand drawn", "일러스트", "수채화"],
+    "스타일라이즈드": ["stylized", "스타일라이즈", "양식화"],
+    "로우폴리": ["low poly", "로우폴리", "저폴리"],
+}
+
+# ============================================================================
+# 새로 추가: 2D/3D 시점 키워드 (필수!)
+# ============================================================================
+VIEW_PERSPECTIVE_KEYWORDS = {
+    "3D": [
+        "3d",
+        "삼차원",
+        "3인칭",
+        "1인칭",
+        "third person",
+        "first person",
+        "tps",
+        "fps",
+        "폴리곤",
+        "유니티",
+        "unity",
+        "언리얼",
+        "unreal",
+        "3d 플랫포머",
+        "오픈월드",
+        "open world",
+    ],
+    "2D": [
+        "2d",
+        "이차원",
+        "사이드뷰",
+        "side view",
+        "탑다운",
+        "top down",
+        "횡스크롤",
+        "픽셀",
+        "스프라이트",
+        "도트",
+        "2d 플랫포머",
+        "메트로베니아",
+        "metroidvania",
+    ],
+    "2.5D": ["2.5d", "이소메트릭", "isometric", "쿼터뷰", "quarter view"],
+}
+
+# ============================================================================
+# 새로 추가: 게임 엔진 키워드 (필수!)
+# ============================================================================
+ENGINE_KEYWORDS = {
+    "Unity": ["unity", "유니티"],
+    "Unreal": ["unreal", "언리얼", "ue4", "ue5"],
+    "Godot": ["godot", "고도", "고돗"],
+    "GameMaker": ["gamemaker", "game maker", "gms", "gms2"],
+    "Pygame": ["pygame", "파이게임"],
+    "Phaser": ["phaser", "페이저"],
+    "Love2D": ["love2d", "löve", "love 2d"],
+    "RPG Maker": ["rpg maker", "rpg메이커", "rpgmaker", "알만툴"],
+    "Construct": ["construct", "컨스트럭트"],
+    "Custom": ["자체 엔진", "custom engine", "직접 개발"],
+}
+
+# ============================================================================
+# 새로 추가: 멀티플레이어 유형 키워드
+# ============================================================================
+MULTIPLAYER_KEYWORDS = {
+    "솔로": ["싱글", "single", "solo", "1인", "혼자", "싱글플레이어"],
+    "로컬협동": [
+        "로컬",
+        "local",
+        "협동",
+        "co-op",
+        "coop",
+        "2인",
+        "2p",
+        "같이",
+        "함께",
+        "couch",
+        "split screen",
+        "분할 화면",
+        "로컬 멀티",
+        "local multi",
+    ],
+    "온라인": [
+        "온라인",
+        "online",
+        "멀티플레이어",
+        "multiplayer",
+        "pvp",
+        "대전",
+        "매칭",
+        "서버",
+        "네트워크",
+    ],
 }
 
 
@@ -113,12 +207,24 @@ class InputValidator:
     """사용자 입력 검증기"""
 
     # 최소 충분 점수 (이 이상이면 GDD 생성 가능)
-    MIN_SUFFICIENT_SCORE = 0.4
+    # 0.6으로 상향 - 필수 정보가 더 많이 필요함
+    MIN_SUFFICIENT_SCORE = 0.6
+
+    # 필수 카테고리 - 이것들이 없으면 무조건 질문
+    REQUIRED_CATEGORIES = [
+        InfoCategory.GENRE,
+        InfoCategory.CORE_CONCEPT,
+        InfoCategory.VIEW_PERSPECTIVE,  # 2D/3D 필수!
+        InfoCategory.ENGINE,  # 엔진 필수!
+    ]
 
     def __init__(self):
         self.genre_patterns = self._compile_patterns(GENRE_KEYWORDS)
         self.platform_patterns = self._compile_patterns(PLATFORM_KEYWORDS)
         self.art_style_patterns = self._compile_patterns(ART_STYLE_KEYWORDS)
+        self.view_patterns = self._compile_patterns(VIEW_PERSPECTIVE_KEYWORDS)
+        self.engine_patterns = self._compile_patterns(ENGINE_KEYWORDS)
+        self.multiplayer_patterns = self._compile_patterns(MULTIPLAYER_KEYWORDS)
 
     def _compile_patterns(
         self, keyword_dict: Dict[str, List[str]]
@@ -149,6 +255,27 @@ class InputValidator:
         for style, pattern in self.art_style_patterns.items():
             if pattern.search(text):
                 return style
+        return None
+
+    def _detect_view_perspective(self, text: str) -> Optional[str]:
+        """2D/3D 시점 감지 - 필수!"""
+        for view, pattern in self.view_patterns.items():
+            if pattern.search(text):
+                return view
+        return None
+
+    def _detect_engine(self, text: str) -> Optional[str]:
+        """게임 엔진 감지 - 필수!"""
+        for engine, pattern in self.engine_patterns.items():
+            if pattern.search(text):
+                return engine
+        return None
+
+    def _detect_multiplayer_type(self, text: str) -> Optional[str]:
+        """멀티플레이어 유형 감지"""
+        for mp_type, pattern in self.multiplayer_patterns.items():
+            if pattern.search(text):
+                return mp_type
         return None
 
     def _has_core_concept(self, text: str) -> bool:
@@ -266,68 +393,118 @@ class InputValidator:
                 confidence_score=0.0,
             )
 
-        # 1. 장르 감지
+        # ================================================================
+        # 1. 장르 감지 (필수)
+        # ================================================================
         genre = self._detect_genre(user_prompt)
         if genre:
             detected_info[InfoCategory.GENRE] = genre
         else:
             missing_info.append(InfoCategory.GENRE)
             questions.append(
-                "어떤 장르의 게임인가요? (예: 액션, RPG, 퍼즐, 시뮬레이션, 로그라이크 등)"
+                "🎮 [필수] 어떤 장르의 게임인가요? (예: 액션, RPG, 퍼즐, 플랫포머, 로그라이크, 슈팅 등)"
             )
 
-        # 2. 핵심 컨셉 확인
+        # ================================================================
+        # 2. 핵심 컨셉 확인 (필수)
+        # ================================================================
         if self._has_core_concept(user_prompt):
             detected_info[InfoCategory.CORE_CONCEPT] = "detected"
         else:
             missing_info.append(InfoCategory.CORE_CONCEPT)
             questions.append(
-                "게임의 핵심 플레이 방식은 무엇인가요? (예: 무엇을 하고, 어떻게 진행되나요?)"
+                "🎯 [필수] 게임의 핵심 플레이 방식은 무엇인가요? (예: 무엇을 하고, 어떻게 진행되나요?)"
             )
 
-        # 3. 플랫폼 감지
+        # ================================================================
+        # 3. 2D/3D 시점 감지 (필수!) - 새로 추가
+        # ================================================================
+        view = self._detect_view_perspective(user_prompt)
+        if view:
+            detected_info[InfoCategory.VIEW_PERSPECTIVE] = view
+        else:
+            missing_info.append(InfoCategory.VIEW_PERSPECTIVE)
+            questions.append(
+                "🖼️ [필수] 게임의 시점은 무엇인가요? (예: 3D 1인칭, 3D 3인칭, 2D 사이드뷰, 2D 탑다운, 2.5D 이소메트릭)"
+            )
+
+        # ================================================================
+        # 4. 게임 엔진 감지 (필수!) - 새로 추가
+        # ================================================================
+        engine = self._detect_engine(user_prompt)
+        if engine:
+            detected_info[InfoCategory.ENGINE] = engine
+        else:
+            missing_info.append(InfoCategory.ENGINE)
+            questions.append(
+                "🔧 [필수] 어떤 게임 엔진을 사용하나요? (예: Unity, Unreal, Godot, GameMaker, 웹/HTML5)"
+            )
+
+        # ================================================================
+        # 5. 플랫폼 감지 (선택)
+        # ================================================================
         platform = self._detect_platform(user_prompt)
         if platform:
             detected_info[InfoCategory.PLATFORM] = platform
-        # 플랫폼은 선택사항이므로 질문 목록에 추가하지 않음
 
-        # 4. 아트 스타일 감지
+        # ================================================================
+        # 6. 아트 스타일 감지 (선택)
+        # ================================================================
         art_style = self._detect_art_style(user_prompt)
         if art_style:
             detected_info[InfoCategory.ART_STYLE] = art_style
-        # 아트 스타일도 선택사항
 
-        # 5. 독특한 특징 확인
+        # ================================================================
+        # 7. 멀티플레이어 유형 감지 (선택) - 새로 추가
+        # ================================================================
+        multiplayer = self._detect_multiplayer_type(user_prompt)
+        if multiplayer:
+            detected_info[InfoCategory.MULTIPLAYER_TYPE] = multiplayer
+
+        # ================================================================
+        # 8. 독특한 특징 확인 (선택)
+        # ================================================================
         if self._has_unique_feature(user_prompt):
             detected_info[InfoCategory.UNIQUE_FEATURE] = "detected"
-        else:
-            # 장르가 있고 컨셉이 있으면 특징은 선택사항
-            if (
-                InfoCategory.GENRE not in detected_info
-                or InfoCategory.CORE_CONCEPT not in detected_info
-            ):
-                missing_info.append(InfoCategory.UNIQUE_FEATURE)
-                questions.append("이 게임만의 특별한 점이나 차별화 요소가 있나요?")
 
+        # ================================================================
         # 신뢰도 점수 계산
-        total_categories = 5  # GENRE, CORE_CONCEPT, PLATFORM, ART_STYLE, UNIQUE_FEATURE
+        # ================================================================
+        # 필수 카테고리 충족 여부 체크
+        required_met = sum(
+            1 for cat in self.REQUIRED_CATEGORIES if cat in detected_info
+        )
+        required_total = len(self.REQUIRED_CATEGORIES)
+
+        # 전체 카테고리 (8개)
+        total_categories = 8
         detected_count = len(detected_info)
-        confidence_score = detected_count / total_categories
 
-        # 필수 정보(장르 + 컨셉)가 있으면 보너스
-        if (
-            InfoCategory.GENRE in detected_info
-            and InfoCategory.CORE_CONCEPT in detected_info
-        ):
-            confidence_score = min(1.0, confidence_score + 0.2)
+        # 기본 점수 = 감지된 정보 비율
+        base_score = detected_count / total_categories
 
-        # 충분 여부 결정
-        is_sufficient = confidence_score >= self.MIN_SUFFICIENT_SCORE
+        # 필수 정보 보너스/페널티
+        required_ratio = required_met / required_total
+        confidence_score = (base_score * 0.4) + (required_ratio * 0.6)
 
-        # 선택적 질문 추가 (충분하지 않을 때만)
-        if not is_sufficient:
+        # ================================================================
+        # 충분 여부 결정 - 필수 카테고리가 모두 있어야 함!
+        # ================================================================
+        all_required_met = all(cat in detected_info for cat in self.REQUIRED_CATEGORIES)
+        is_sufficient = (
+            all_required_met and confidence_score >= self.MIN_SUFFICIENT_SCORE
+        )
+
+        # 선택적 질문 추가 (필수가 충족되었지만 추가 정보 권장)
+        if all_required_met and not is_sufficient:
             if InfoCategory.PLATFORM not in detected_info:
-                questions.append("타겟 플랫폼이 있나요? (예: PC, 모바일, 웹, 콘솔)")
+                questions.append(
+                    "📱 [권장] 타겟 플랫폼이 있나요? (예: PC, 모바일, 웹, 콘솔)"
+                )
+            if InfoCategory.MULTIPLAYER_TYPE not in detected_info:
+                questions.append(
+                    "👥 [권장] 싱글플레이인가요, 멀티플레이인가요? (예: 솔로, 로컬 협동, 온라인)"
+                )
 
         return ValidationResult(
             is_sufficient=is_sufficient,
@@ -429,8 +606,14 @@ def interactive_validate(prompt: str) -> str:
                 additional_info["장르"] = answer
             elif "플레이" in question or "방식" in question:
                 additional_info["핵심 플레이"] = answer
+            elif "시점" in question or "2D" in question or "3D" in question:
+                additional_info["시점"] = answer  # 2D/3D
+            elif "엔진" in question:
+                additional_info["게임 엔진"] = answer
             elif "플랫폼" in question:
                 additional_info["플랫폼"] = answer
+            elif "멀티" in question or "싱글" in question or "협동" in question:
+                additional_info["플레이 유형"] = answer
             elif "특별" in question or "차별" in question:
                 additional_info["특징"] = answer
             else:
